@@ -1,24 +1,26 @@
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 
 describe('App', () => {
-  it('renders top bar title and Projects nav + heading', () => {
+  it('renders top bar title and navigation', () => {
+    // Render App on a route that does NOT use the Zustand store (e.g. /convert)
     render(
-      <BrowserRouter>
+      <MemoryRouter initialEntries={['/convert']}>
         <App />
-      </BrowserRouter>,
+      </MemoryRouter>,
     );
 
     // App title in the header
     expect(screen.getByText(/Bead Pattern Designer/i)).toBeInTheDocument();
 
-    // "Projects" in the nav (link)
+    // Nav links should still be there in the header
     expect(screen.getByRole('link', { name: /Projects/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Convert Image/i })).toBeInTheDocument();
 
-    // "Projects" as the page heading
+    // And the /convert page heading should be rendered
     expect(
-      screen.getByRole('heading', { level: 1, name: /Projects/i }),
+      screen.getByRole('heading', { level: 1, name: /Image to Pattern/i }),
     ).toBeInTheDocument();
   });
 });

@@ -1,6 +1,9 @@
 // src/routes/index.tsx
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
+import type { EditorUiState } from '../domain/uiState';
+import { PatternCanvas } from '../editor/PatternCanvas';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -91,10 +94,121 @@ export function HomePage() {
 
 export function PatternEditorPage() {
   const { projectId } = useParams();
+
+  // Read the entire store once; derive what we need from it.
+  const store = useBeadStore();
+
+  const pattern = projectId ? store.patterns[projectId] : undefined;
+  const shape = pattern ? store.shapes[pattern.shapeId] : undefined;
+  const palette = pattern ? store.palettes[pattern.paletteId] : undefined;
+
+  const [editorState, setEditorState] = useState<EditorUiState>(() => ({
+    selectedTool: 'pencil',
+    selectedColorId: palette?.colors[0]?.id ?? null,
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    gridVisible: true,
+    outlinesVisible: true,
+  }));
+
+  if (!projectId) {
+    return (
+      <div>
+        <h1>Pattern Editor</h1>
+        <p>No project id provided.</p>
+      </div>
+    );
+  }
+
+  if (!pattern || !shape || !palette) {
+    return (
+      <div>
+        <h1>Pattern Editor</h1>
+        <p>Pattern not found for id: {projectId}</p>
+      </div>
+    );
+  }
+
+  const handleZoomChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
+    const value = Number(event.target.value) || 1;
+    setEditorState((prev) => ({ ...prev, zoom: value }));
+  };
+
+  const handleGridToggle: React.ChangeEventHandler<HTMLInputElement> = (event) => {
+    const checked = event.target.checked;
+    setEditorState((prev) => ({ ...prev, gridVisible: checked }));
+  };
+
+  const handleOutlinesToggle: React.ChangeEventHandler<HTMLInputElement> = (event) => {
+    const checked = event.target.checked;
+    setEditorState((prev) => ({ ...prev, outlinesVisible: checked }));
+  };
+
+  const handleCellPointerDown = (x: number, y: number) => {
+    if (!editorState.selectedColorId) return;
+
+    const newGrid = pattern.grid.map((row, rowIndex) =>
+      rowIndex === y ? row.map((cell, colIndex) => (colIndex === x ? editorState.selectedColorId : cell)) : row,
+    );
+
+    // Use the store's updatePattern action from the state object
+    store.updatePattern(pattern.id, { grid: newGrid });
+  };
+
   return (
-    <div>
-      <h1>Pattern Editor</h1>
-      <p>Editing project: {projectId}</p>
+    <div className="pattern-editor">
+      <header className="pattern-editor__header">
+        <h1>{pattern.name}</h1>
+        <div className="pattern-editor__controls">
+          <label>
+            Zoom
+            <input
+              type="range"
+              min={0.5}
+              max={3}
+              step={0.1}
+              value={editorState.zoom}
+              onChange={handleZoomChange}
+            />
+          </label>
+          <label>
+            <input type="checkbox" checked={editorState.gridVisible} onChange={handleGridToggle} />
+            Grid
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={editorState.outlinesVisible}
+              onChange={handleOutlinesToggle}
+            />
+            Outlines
+          </label>
+        </div>
+      </header>
+      <div className="pattern-editor__body">
+        <div className="pattern-editor__canvas">
+          <PatternCanvas
+            pattern={pattern}
+            shape={shape}
+            palette={palette}
+            editorState={editorState}
+            onCellPointerDown={handleCellPointerDown}
+          />
+        </div>
+        <aside className="pattern-editor__sidebar">
+          <h2>Details</h2>
+          <p>Shape: {shape.name}</p>
+          <p>
+            Size: {pattern.cols} × {pattern.rows}
+          </p>
+          <p>Palette: {palette.name}</p>
+          <p className="pattern-editor__hint">
+            Tip: Click on the grid to place beads using the default color. Palette and tool selection
+            will be added in a later phase.
+          </p>
+        </aside>
+      </div>
     </div>
   );
 }

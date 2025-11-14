@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    // Jest runs in CommonJS land, so let ts-jest compile accordingly:
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "verbatimModuleSyntax": false,
+
+    // These help interop with CJS-style requires if any:
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  }
+}

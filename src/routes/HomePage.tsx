@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
 import { getLastOpenedPatternId, setLastOpenedPatternId } from '../settings/appSettings';
+import './HomePage.css';
 
 export function HomePage() {
   const navigate = useNavigate();

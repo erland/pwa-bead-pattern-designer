@@ -15,6 +15,7 @@ import {
   redoHistory,
   type HistoryState,
 } from '../editor/history';
+import './PatternEditorPage.css';
 
 export function PatternEditorPage() {
   const { projectId } = useParams();

@@ -1,0 +1,152 @@
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.home-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.home-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.home-actions button {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-button-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.home-actions button:hover {
+  background: var(--color-button-bg-hover);
+}
+
+.home-section {
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.home-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.home-list button {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: var(--color-list-item-bg);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.home-list button:hover {
+  background: var(--color-list-item-bg-hover);
+}
+
+/* "Continue last project" section */
+
+.home-section--continue {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background-color: var(--color-continue-bg);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.home-continue-button {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.home-continue-button:hover {
+  background-color: var(--color-continue-hover-bg);
+}
+
+/* New Pattern dialog */
+
+.new-pattern-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40; /* above cards/header */
+}
+
+.new-pattern-dialog {
+  background: var(--color-dialog-bg);
+  color: var(--color-text);
+  padding: 1.5rem 2rem;
+  border-radius: 1rem;
+  max-width: 360px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+}
+
+.new-pattern-dialog h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.new-pattern-dialog__field {
+  margin-bottom: 0.75rem;
+}
+
+.new-pattern-dialog__field label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.new-pattern-dialog select {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-dialog-border);
+  background: var(--color-dialog-input-bg);
+  color: var(--color-text);
+}
+
+.new-pattern-dialog__actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.new-pattern-dialog__actions button {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-dialog-border);
+  background: var(--color-dialog-button-bg);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.new-pattern-dialog__actions button:hover {
+  background: var(--color-dialog-button-bg-hover);
+}

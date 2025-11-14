@@ -32,6 +32,10 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
 
+  // Track dragging state + last painted cell
+  const isDrawingRef = useRef(false);
+  const lastCellRef = useRef<{ x: number; y: number } | null>(null);
+
   // Track container size using ResizeObserver if available
   useEffect(() => {
     function updateSize() {
@@ -149,10 +153,9 @@ export function PatternCanvas(props: PatternCanvasProps) {
   ]);
 
   // Pointer handling
-  const handlePointerDown: React.PointerEventHandler<HTMLCanvasElement> = (event) => {
-    if (!onCellPointerDown) return;
+  const getCellFromEvent = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas || size.width === 0 || size.height === 0) return;
+    if (!canvas || size.width === 0 || size.height === 0) return null;
 
     const rect = canvas.getBoundingClientRect();
     const px = event.clientX - rect.left;
@@ -168,15 +171,60 @@ export function PatternCanvas(props: PatternCanvasProps) {
       panY: editorState.panY,
     });
 
-    const cell = screenToCell(px, py, layout, pattern.cols, pattern.rows);
+    return screenToCell(px, py, layout, pattern.cols, pattern.rows);
+  };
+
+  const handlePointerDown: React.PointerEventHandler<HTMLCanvasElement> = (event) => {
+    if (!onCellPointerDown) return;
+
+    // Capture pointer so we keep getting events even if we leave the canvas
+    event.currentTarget.setPointerCapture(event.pointerId);
+    isDrawingRef.current = true;
+
+    const cell = getCellFromEvent(event);
     if (!cell) return;
 
+    lastCellRef.current = cell;
     onCellPointerDown(cell.x, cell.y);
+  };
+
+  const handlePointerMove: React.PointerEventHandler<HTMLCanvasElement> = (event) => {
+    if (!onCellPointerDown) return;
+    if (!isDrawingRef.current) return;
+
+    const cell = getCellFromEvent(event);
+    if (!cell) return;
+
+    const last = lastCellRef.current;
+    if (last && last.x === cell.x && last.y === cell.y) {
+      // still in same cell, no need to re-apply the tool
+      return;
+    }
+
+    lastCellRef.current = cell;
+    onCellPointerDown(cell.x, cell.y);
+  };
+
+  const handlePointerUp: React.PointerEventHandler<HTMLCanvasElement> = (event) => {
+    isDrawingRef.current = false;
+    lastCellRef.current = null;
+
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      // ignore if we didn't have capture
+    }
   };
 
   return (
     <div ref={containerRef} className="pattern-canvas-container">
-      <canvas ref={canvasRef} onPointerDown={handlePointerDown} />
+      <canvas
+        ref={canvasRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+      />
     </div>
   );
 }

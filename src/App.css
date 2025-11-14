@@ -197,3 +197,70 @@
   font-size: 0.8rem;
   color: #9ca3af;
 }
+
+/* Palette panel */
+
+.palette-panel {
+  margin-top: 0.75rem;
+}
+
+.palette-panel h2 {
+  margin: 0 0 0.5rem;
+}
+
+.palette-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(24px, 1fr));
+  gap: 0.35rem;
+}
+
+.palette-panel__swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.8);
+  cursor: pointer;
+  padding: 0;
+}
+
+.palette-panel__swatch--selected {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+/* Tools + details in sidebar */
+
+.pattern-editor__tools {
+  margin-bottom: 0.75rem;
+}
+
+.pattern-editor__tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.tool-button {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.tool-button--active {
+  background: rgba(37, 99, 235, 0.9);
+  border-color: rgba(129, 140, 248, 0.9);
+}
+
+.tool-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pattern-editor__details {
+  margin-top: 0.75rem;
+}

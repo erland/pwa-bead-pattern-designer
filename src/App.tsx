@@ -8,6 +8,7 @@ import {
   PatternGroupPrintPage,
 } from './routes';
 import './App.css';
+import { ThemeToggle } from './settings/ThemeToggle';
 
 export default function App() {
   return (
@@ -18,6 +19,9 @@ export default function App() {
           <Link to="/">Projects</Link>
           <Link to="/convert">Convert Image</Link>
         </nav>
+        <div className="app-header__theme">
+          <ThemeToggle />
+        </div>
       </header>
       <main className="app-main">
         <Routes>

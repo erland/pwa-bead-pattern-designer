@@ -7,6 +7,8 @@ import type { EditorUiState } from '../domain/uiState';
 import { PatternCanvas } from '../editor/PatternCanvas';
 import { PalettePanel } from '../editor/PalettePanel';
 import { applyPencil, applyEraser, applyFill, cloneGrid } from '../editor/tools';
+import { getLastOpenedPatternId, setLastOpenedPatternId } from '../settings/appSettings';
+import { SaveNowButton } from '../persistence/SaveNowButton';
 import {
   createInitialHistory,
   applyChange,
@@ -30,6 +32,10 @@ export function HomePage() {
   const patterns = Object.values(patternsMap);
   const groups = Object.values(groupsMap);
 
+  // Figure out "last opened" pattern from settings + current store
+  const lastOpenedId = getLastOpenedPatternId();
+  const lastOpenedPattern = lastOpenedId ? patternsMap[lastOpenedId] : undefined;
+
   // --- New Pattern dialog state ---
   const [isNewPatternDialogOpen, setIsNewPatternDialogOpen] = useState(false);
   const [dialogShapeId, setDialogShapeId] = useState<string>('');
@@ -46,6 +52,12 @@ export function HomePage() {
 
   const handleCancelNewPattern = () => {
     setIsNewPatternDialogOpen(false);
+  };
+
+  // Central helper: open a pattern and remember it as "last opened"
+  const openPattern = (id: string) => {
+    setLastOpenedPatternId(id);
+    navigate(`/editor/${id}`);
   };
 
   const handleConfirmNewPattern = () => {
@@ -65,7 +77,7 @@ export function HomePage() {
     });
 
     setIsNewPatternDialogOpen(false);
-    navigate(`/editor/${id}`);
+    openPattern(id);
   };
 
   const handleNewGroup = () => {
@@ -89,13 +101,27 @@ export function HomePage() {
 
       <section className="home-section">
         <h2>Patterns</h2>
+
+        {/* Inline "Open last" inside the Patterns group */}
+        {lastOpenedPattern && (
+          <div className="home-last-opened">
+            <button
+              type="button"
+              className="home-last-opened__button"
+              onClick={() => openPattern(lastOpenedPattern.id)}
+            >
+              Open last: <strong>{lastOpenedPattern.name}</strong>
+            </button>
+          </div>
+        )}
+
         {patterns.length === 0 ? (
           <p>No patterns yet. Create one to get started.</p>
         ) : (
           <ul className="home-list">
             {patterns.map((p) => (
               <li key={p.id}>
-                <button type="button" onClick={() => navigate(`/editor/${p.id}`)}>
+                <button type="button" onClick={() => openPattern(p.id)}>
                   {p.name}
                 </button>
               </li>
@@ -195,6 +221,13 @@ export function PatternEditorPage() {
   }));
 
   const [history, setHistory] = useState<HistoryState | null>(null);
+
+  // Remember this as last opened pattern when the editor is mounted / projectId changes
+  useEffect(() => {
+    if (projectId) {
+      setLastOpenedPatternId(projectId);
+    }
+  }, [projectId]);
 
   // Initialize history once we have a pattern and no history yet
   useEffect(() => {
@@ -343,6 +376,9 @@ export function PatternEditorPage() {
             />
             Outlines
           </label>
+        </div>
+        <div className="pattern-editor__save">
+          <SaveNowButton />
         </div>
       </header>
 

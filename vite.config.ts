@@ -2,7 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const isCI = process.env.GITHUB_ACTIONS === 'true'
+const base = isCI ? '/pwa-bead-pattern-designer/' : '/'
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -11,7 +15,7 @@ export default defineConfig({
       manifest: {
         name: 'Bead Pattern Designer',
         short_name: 'Bead Designer',
-        start_url: '/',
+        start_url: base,
         display: 'standalone',
         background_color: '#111827',
         theme_color: '#111827',

@@ -1,43 +1,61 @@
-name: Deploy PWA to GitHub Pages (on release)
+name: Deploy to GitHub Pages on Release
 
 on:
   release:
     types: [published]
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-      # Fetches your code
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Set up pnpm
+      - name: Setup PNPM
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - name: Install dependencies
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Build site
-        # Make sure your build script outputs to ./dist (Vite default)
-        run: pnpm run build
+      # Compute correct Vite base path:
+      # - user/org site (foo.github.io) => '/'
+      # - project site                   => '/<repo-name>/'
+      - name: Compute base
+        id: base
+        shell: bash
+        run: |
+          REPO="${{ github.event.repository.name }}"
+          if [[ "$REPO" == *.github.io ]]; then
+            echo "base=/" >> "$GITHUB_OUTPUT"
+          else
+            echo "base=/$REPO/" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Using base: $(cat $GITHUB_OUTPUT)"
+
+      - name: Build (Vite)
+        run: pnpm run build -- --base='${{ steps.base.outputs.base }}'
+
+      # SPA routing fallback so deep links work on Pages
+      - name: Create 404 fallback
+        run: cp dist/index.html dist/404.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -49,12 +67,8 @@ jobs:
     needs: build
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    permissions:
-      pages: write
-      id-token: write
-
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
-        id: deploy
+        id: deployment
         uses: actions/deploy-pages@v4

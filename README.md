@@ -1,73 +1,193 @@
-# React + TypeScript + Vite
+# Bead Pattern Designer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Bead Pattern Designer is a browser-based app for creating and managing fuse-bead (pärlplatta) patterns.
+It runs on desktop, tablet, and mobile browsers and can be installed as a Progressive Web App (PWA).
 
-Currently, two official plugins are available:
+👉 **Live demo:** https://erland.github.io/pwa-bead-pattern-designer
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Table of Contents
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+  - [Installation](#installation)
+  - [Development Server](#development-server)
+  - [Production Build](#production-build)
+  - [Running Tests](#running-tests)
+- [Development Plan & Roadmap](#development-plan--roadmap)
+- [Project Structure (high-level)](#project-structure-high-level)
+- [Contributing](#contributing)
+- [License](#license)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Overview
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+The app helps creators design, edit, and print bead patterns. It supports both **single 2D patterns** and **multi-part 3D projects** using *pattern groups*. Everything is stored locally in the browser so it works offline and doesn’t require an account or backend.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+There is a single user role:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Creator** – can create, edit, import, export, and print patterns and pattern groups.
+
+---
+
+## Features
+
+### Pattern editing
+
+- Grid-based editor with zoom, pan, and continuous drawing.
+- Pencil, eraser and fill tools.
+- Undo/redo support.
+- Toggleable grid and outlines.
+- Works with irregular pegboard shapes via masks.
+
+### Shapes & palettes
+
+- Built-in pegboard shapes (squares, circles, hearts, stars, etc.).
+- Brand-style color palettes with named colors.
+- Palette-based color picking and bead counting (basic, extensible).
+
+### Image-to-pattern
+
+- Import an image and convert it into a new bead pattern.
+- Choose target size, max colors and palette.
+- Optional dithering and editing after conversion.
+
+### Projects & groups
+
+- Create, duplicate and delete individual patterns.
+- Pattern groups for multi-part / 3D builds.
+- “Open last” shortcut to jump back into the most recently edited pattern.
+
+### Export, printing & offline
+
+- Print-friendly views with grid, legend and bead counts.
+- Export patterns to JSON and PNG (SVG planned).
+- Installable PWA with offline support.
+- Local persistence via IndexedDB and app settings in localStorage.
+
+---
+
+## Tech Stack
+
+- **Framework:** React
+- **Language:** TypeScript
+- **Bundler/Dev server:** Vite
+- **Routing:** React Router
+- **State management:** Lightweight global store
+- **Rendering:** HTML Canvas 2D
+- **Persistence:** IndexedDB + localStorage
+- **PWA:** vite-plugin-pwa (service worker + manifest)
+- **Testing:** Jest + React Testing Library
+- **Styling:** CSS with theme variables (light/dark)
+
+---
+
+## Getting Started
+
+### Installation
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/erland/pwa-bead-pattern-designer.git
+cd pwa-bead-pattern-designer
+
+# npm, pnpm or yarn – pick your preferred tool
+npm install
+# or
+pnpm install
+# or
+yarn
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Development Server
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Run the app in development mode:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
+# or: pnpm dev / yarn dev
 ```
+
+Open the URL printed in the terminal (typically `http://localhost:5173/`).
+
+### Production Build
+
+Create an optimized production build:
+
+```bash
+npm run build
+```
+
+Preview the built app locally:
+
+```bash
+npm run preview
+```
+
+When hosted on GitHub Pages, the app is available at:
+
+- https://erland.github.io/pwa-bead-pattern-designer
+
+### Running Tests
+
+Run unit and component tests:
+
+```bash
+npm test
+```
+
+The test setup uses Jest and React Testing Library. Storage tests use an in-memory fallback rather than real IndexedDB to keep them deterministic and fast.
+
+---
+
+## Project Structure (high-level)
+
+Structure may evolve, but roughly:
+
+```text
+src/
+  editor/
+    PatternCanvas.tsx
+    PalettePanel.tsx
+    tools.ts
+    history.ts
+  routes/
+    HomePage.tsx
+    PatternEditorPage.tsx
+    PatternGroupEditorPage.tsx
+    ...
+  store/
+    beadStore.ts
+  domain/
+    colors.ts
+    shapes.ts
+    patterns.ts
+    uiState.ts
+  persistence/
+    storage.ts
+    SaveNowButton.tsx
+  settings/
+    appSettings.ts
+    ThemeToggle.tsx
+  App.tsx
+  main.tsx
+  App.css
+public/
+  favicon.svg
+  apple-touch-icon.png
+  icons/
+    icon-192.png
+    icon-512.png
+    icon-512-maskable.png
+```
+
+---
+
+## License
+
+See the `LICENSE` file in this repository for licensing information.

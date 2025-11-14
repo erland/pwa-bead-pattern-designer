@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
+import { isCellInShape } from '../domain/shapes';
 import type { EditorUiState } from '../domain/uiState';
 import { PatternCanvas } from '../editor/PatternCanvas';
 import { PalettePanel } from '../editor/PalettePanel';
@@ -17,7 +18,7 @@ import {
 export function HomePage() {
   const navigate = useNavigate();
 
-  // 👇 selectors now return stable references (no Object.values inside)
+  // Store selectors with stable references
   const patternsMap = useBeadStore((state) => state.patterns);
   const groupsMap = useBeadStore((state) => state.groups);
   const shapes = useBeadStore((state) => state.shapes);
@@ -25,14 +26,35 @@ export function HomePage() {
   const createPattern = useBeadStore((state) => state.createPattern);
   const createGroup = useBeadStore((state) => state.createGroup);
 
-  // 👇 derive arrays outside the selector
+  // Derived arrays for listing
   const patterns = Object.values(patternsMap);
   const groups = Object.values(groupsMap);
 
-  const handleNewPattern = () => {
-    const shape = Object.values(shapes)[0];
-    const palette = Object.values(palettes)[0];
-    if (!shape || !palette) return;
+  // --- New Pattern dialog state ---
+  const [isNewPatternDialogOpen, setIsNewPatternDialogOpen] = useState(false);
+  const [dialogShapeId, setDialogShapeId] = useState<string>('');
+  const [dialogPaletteId, setDialogPaletteId] = useState<string>('');
+
+  const handleOpenNewPatternDialog = () => {
+    const firstShape = Object.values(shapes)[0];
+    const firstPalette = Object.values(palettes)[0];
+
+    setDialogShapeId(firstShape?.id ?? '');
+    setDialogPaletteId(firstPalette?.id ?? '');
+    setIsNewPatternDialogOpen(true);
+  };
+
+  const handleCancelNewPattern = () => {
+    setIsNewPatternDialogOpen(false);
+  };
+
+  const handleConfirmNewPattern = () => {
+    const shape = dialogShapeId ? shapes[dialogShapeId] : undefined;
+    const palette = dialogPaletteId ? palettes[dialogPaletteId] : undefined;
+    if (!shape || !palette) {
+      // Nothing to do if store isn't ready / user hasn't selected
+      return;
+    }
 
     const id = createPattern({
       name: 'New Pattern',
@@ -42,6 +64,7 @@ export function HomePage() {
       paletteId: palette.id,
     });
 
+    setIsNewPatternDialogOpen(false);
     navigate(`/editor/${id}`);
   };
 
@@ -55,7 +78,7 @@ export function HomePage() {
       <header className="home-header-row">
         <h1>Projects</h1>
         <div className="home-actions">
-          <button type="button" onClick={handleNewPattern}>
+          <button type="button" onClick={handleOpenNewPatternDialog}>
             New Pattern
           </button>
           <button type="button" onClick={handleNewGroup}>
@@ -97,9 +120,59 @@ export function HomePage() {
           </ul>
         )}
       </section>
+
+      {/* Simple inline "dialog" for New Pattern */}
+      {isNewPatternDialogOpen && (
+        <div className="new-pattern-dialog-backdrop">
+          <div className="new-pattern-dialog">
+            <h2>Create New Pattern</h2>
+            <div className="new-pattern-dialog__field">
+              <label>
+                Shape:
+                <select
+                  value={dialogShapeId}
+                  onChange={(e) => setDialogShapeId(e.target.value)}
+                >
+                  {Object.values(shapes).map((shape) => (
+                    <option key={shape.id} value={shape.id}>
+                      {shape.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="new-pattern-dialog__field">
+              <label>
+                Palette:
+                <select
+                  value={dialogPaletteId}
+                  onChange={(e) => setDialogPaletteId(e.target.value)}
+                >
+                  {Object.values(palettes).map((palette) => (
+                    <option key={palette.id} value={palette.id}>
+                      {palette.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="new-pattern-dialog__actions">
+              <button type="button" onClick={handleCancelNewPattern}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleConfirmNewPattern}>
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
 
 export function PatternEditorPage() {
   const { projectId } = useParams();
@@ -182,6 +255,12 @@ export function PatternEditorPage() {
   };
 
   const applyToolAtCell = (x: number, y: number) => {
+    if (!pattern || !shape) return;
+
+    if (!isCellInShape(shape, x, y)) {
+      return;
+    }
+
     const currentGrid = pattern.grid;
 
     let newGrid = currentGrid;
@@ -359,6 +438,8 @@ export function PatternEditorPage() {
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
 
 export function PatternGroupEditorPage() {
   const { groupId } = useParams();

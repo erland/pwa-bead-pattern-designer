@@ -1,7 +1,7 @@
 // src/store/beadStore.ts
 import { create } from 'zustand';
 import type { BeadPalette, BeadColor } from '../domain/colors';
-import type { PegboardShape } from '../domain/shapes';
+import { DEFAULT_SHAPES, type PegboardShape, createRectangleShape } from '../domain/shapes';
 import type { BeadPattern, PatternGroup, PatternPart } from '../domain/patterns';
 import { createEmptyGrid } from '../domain/patterns';
 
@@ -72,33 +72,15 @@ function createSeedPalette(): BeadPalette {
 }
 
 function createSeedShapes(): Record<string, PegboardShape> {
-  const shapes: PegboardShape[] = [
-    {
-      id: 'shape-square-16',
-      name: 'Square 16×16',
-      kind: 'square',
-      cols: 16,
-      rows: 16,
-    },
-    {
-      id: 'shape-square-29',
-      name: 'Square 29×29',
-      kind: 'square',
-      cols: 29,
-      rows: 29,
-    },
-    {
-      id: 'shape-circle-29',
-      name: 'Circle 29 (demo, unmasked)',
-      kind: 'circle',
-      cols: 29,
-      rows: 29,
-      // mask will be introduced properly in Phase 5
-    },
+  // Keep a small 16×16 square for quick tests / tiny patterns
+  const baseShapes: PegboardShape[] = [
+    createRectangleShape('shape-square-16', 'Square 16×16', 16, 16),
+    // And then all the default 29×29 shapes (square, circle, heart, …)
+    ...DEFAULT_SHAPES,
   ];
 
   const map: Record<string, PegboardShape> = {};
-  for (const s of shapes) {
+  for (const s of baseShapes) {
     map[s.id] = s;
   }
   return map;

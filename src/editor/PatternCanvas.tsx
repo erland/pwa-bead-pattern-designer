@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import type { BeadPattern } from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
+import { isCellInShape } from '../domain/shapes';
 import type { BeadPalette, BeadColor } from '../domain/colors';
 import type { EditorUiState } from '../domain/uiState';
 import { computeCanvasLayout, screenToCell, type CanvasLayout } from './canvasMath';
@@ -17,142 +18,155 @@ export interface PatternCanvasProps {
 
 type Size = { width: number; height: number };
 
-function buildColorMap(palette: BeadPalette): Record<string, BeadColor> {
-  const map: Record<string, BeadColor> = {};
-  for (const c of palette.colors) {
-    map[c.id] = c;
+function findColor(palette: BeadPalette, id: string | null): BeadColor | null {
+  if (!id) return null;
+  return palette.colors.find((c) => c.id === id) ?? null;
+}
+
+function drawPattern(
+  ctx: CanvasRenderingContext2D,
+  layout: CanvasLayout,
+  pattern: BeadPattern,
+  shape: PegboardShape,
+  palette: BeadPalette,
+  editorState: EditorUiState,
+) {
+  const { cols, rows, grid } = pattern;
+  const { cellSize, originX, originY, boardWidth, boardHeight } = layout;
+
+  // Clear
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  // Background behind board
+  ctx.fillStyle = '#f8f8f8';
+  ctx.fillRect(originX, originY, boardWidth, boardHeight);
+
+  // Draw cells
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const cx = originX + x * cellSize;
+      const cy = originY + y * cellSize;
+      const valid = isCellInShape(shape, x, y);
+
+      const cellValue = grid[y]?.[x] ?? null;
+      const color = findColor(palette, cellValue);
+
+      if (!valid) {
+        // Disabled cell (mask=false)
+        ctx.fillStyle = '#e5e5e5';
+        ctx.fillRect(cx, cy, cellSize, cellSize);
+        if (editorState.gridVisible) {
+          ctx.strokeStyle = '#d0d0d0';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(cx + 0.5, cy + 0.5, cellSize - 1, cellSize - 1);
+        }
+        continue;
+      }
+
+      // Valid board background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(cx, cy, cellSize, cellSize);
+
+      // Bead circle
+      if (color) {
+        const radius = (cellSize * 0.8) / 2;
+        const centerX = cx + cellSize / 2;
+        const centerY = cy + cellSize / 2;
+
+        const { r, g, b } = color.rgb;
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Simple outline
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
   }
-  return map;
+
+  // Optional grid overlay
+  if (editorState.gridVisible) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x <= cols; x += 1) {
+      const lx = originX + x * cellSize + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(lx, originY);
+      ctx.lineTo(lx, originY + boardHeight);
+      ctx.stroke();
+    }
+
+    for (let y = 0; y <= rows; y += 1) {
+      const ly = originY + y * cellSize + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(originX, ly);
+      ctx.lineTo(originX + boardWidth, ly);
+      ctx.stroke();
+    }
+  }
 }
 
 export function PatternCanvas(props: PatternCanvasProps) {
   const { pattern, shape, palette, editorState, onCellPointerDown } = props;
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
 
-  // Track dragging state + last painted cell
+  // For freehand drawing (drag-to-draw)
   const isDrawingRef = useRef(false);
   const lastCellRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Track container size using ResizeObserver if available
+  // Measure container size
   useEffect(() => {
-    function updateSize() {
-      const el = containerRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateSize = () => {
+      const rect = container.getBoundingClientRect();
       setSize({ width: rect.width, height: rect.height });
-    }
+    };
 
     updateSize();
 
-    const el = containerRef.current;
-    if (!el) return;
-
-    if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => updateSize());
-      ro.observe(el);
-      return () => ro.disconnect();
-    }
-
+    // Basic window resize listener (you can swap to ResizeObserver later)
     window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    return () => {
+      window.removeEventListener('resize', updateSize);
+    };
   }, []);
 
-  // Drawing effect
+  // Draw whenever pattern / shape / palette / editorState / size changes
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || size.width === 0 || size.height === 0) return;
+    if (!canvas) return;
+    if (size.width <= 0 || size.height <= 0) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { cols, rows } = pattern;
-
     canvas.width = size.width;
     canvas.height = size.height;
 
-    const layout: CanvasLayout = computeCanvasLayout({
+    const layout = computeCanvasLayout({
       canvasWidth: size.width,
       canvasHeight: size.height,
-      cols,
-      rows,
+      cols: pattern.cols,
+      rows: pattern.rows,
       zoom: editorState.zoom,
       panX: editorState.panX,
       panY: editorState.panY,
     });
 
-    // Clear
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawPattern(ctx, layout, pattern, shape, palette, editorState);
+  }, [pattern, shape, palette, editorState, size]);
 
-    // Background
-    ctx.fillStyle = '#020617'; // near black
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const colorMap = buildColorMap(palette);
-
-    // Draw board background
-    ctx.save();
-    ctx.translate(layout.originX, layout.originY);
-
-    // Optional background board rectangle (slightly different by shape kind)
-    const boardBg = shape.kind === 'circle' ? '#020617' : '#0f172a';
-    ctx.fillStyle = boardBg;
-    ctx.fillRect(0, 0, layout.boardWidth, layout.boardHeight);
-
-    // Draw cells (beads)
-    for (let y = 0; y < rows; y += 1) {
-      const row = pattern.grid[y];
-      for (let x = 0; x < cols; x += 1) {
-        const beadId = row?.[x] ?? null;
-        const cellX = x * layout.cellSize;
-        const cellY = y * layout.cellSize;
-
-        // grid lines
-        if (editorState.gridVisible) {
-          ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(cellX, cellY, layout.cellSize, layout.cellSize);
-        }
-
-        if (!beadId) continue;
-        const bead = colorMap[beadId];
-        if (!bead) continue;
-
-        const cx = cellX + layout.cellSize / 2;
-        const cy = cellY + layout.cellSize / 2;
-        const radius = (layout.cellSize * 0.75) / 2;
-
-        const fill = `rgb(${bead.rgb.r}, ${bead.rgb.g}, ${bead.rgb.b})`;
-        ctx.fillStyle = fill;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        if (editorState.outlinesVisible) {
-          ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        }
-      }
-    }
-
-    ctx.restore();
-  }, [
-    pattern,
-    palette,
-    editorState.zoom,
-    editorState.panX,
-    editorState.panY,
-    editorState.gridVisible,
-    editorState.outlinesVisible,
-    size.width,
-    size.height,
-    shape.kind,
-  ]);
-
-  // Pointer handling
   const getCellFromEvent = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas || size.width === 0 || size.height === 0) return null;
@@ -171,13 +185,20 @@ export function PatternCanvas(props: PatternCanvasProps) {
       panY: editorState.panY,
     });
 
-    return screenToCell(px, py, layout, pattern.cols, pattern.rows);
+    const cell = screenToCell(px, py, layout, pattern.cols, pattern.rows);
+    if (!cell) return null;
+
+    // IMPORTANT: ignore masked-out cells
+    if (!isCellInShape(shape, cell.x, cell.y)) {
+      return null;
+    }
+
+    return cell;
   };
 
   const handlePointerDown: React.PointerEventHandler<HTMLCanvasElement> = (event) => {
     if (!onCellPointerDown) return;
 
-    // Capture pointer so we keep getting events even if we leave the canvas
     event.currentTarget.setPointerCapture(event.pointerId);
     isDrawingRef.current = true;
 
@@ -197,7 +218,6 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
     const last = lastCellRef.current;
     if (last && last.x === cell.x && last.y === cell.y) {
-      // still in same cell, no need to re-apply the tool
       return;
     }
 
@@ -212,7 +232,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
     } catch {
-      // ignore if we didn't have capture
+      // ignore
     }
   };
 

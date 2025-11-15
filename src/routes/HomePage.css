@@ -188,6 +188,12 @@
   opacity: 0.8;
 }
 
+.pattern-card__badge {
+  margin-left: 0.35rem;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
 /* Actions row under each card (reusing pill styles) */
 .pattern-card__actions {
   display: flex;

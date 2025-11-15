@@ -37,17 +37,16 @@ export function HomePage() {
   );
 
   // Combined project cards: patterns + groups
-  const projectCards =
-    [
-      ...topLevelPatterns.map((pattern) => ({
-        type: 'pattern' as const,
-        pattern,
-      })),
-      ...groups.map((group) => ({
-        type: 'group' as const,
-        group,
-      })),
-    ];
+  const projectCards = [
+    ...topLevelPatterns.map((pattern) => ({
+      type: 'pattern' as const,
+      pattern,
+    })),
+    ...groups.map((group) => ({
+      type: 'group' as const,
+      group,
+    })),
+  ];
 
   // "Last opened" pattern from settings + current store
   const lastOpenedId = getLastOpenedPatternId();
@@ -197,7 +196,6 @@ export function HomePage() {
                       )}
                       <div className="pattern-card__title">
                         {p.name}
-                        <span className="pattern-card__badge">Pattern</span>
                       </div>
                     </button>
 
@@ -255,9 +253,6 @@ export function HomePage() {
                     )}
                     <div className="pattern-card__title">
                       {g.name}
-                      <span className="pattern-card__badge">
-                        Group{g.parts.length > 0 ? ` · ${g.parts.length} part${g.parts.length === 1 ? '' : 's'}` : ''}
-                      </span>
                     </div>
                   </button>
 

@@ -77,6 +77,13 @@
   touch-action: none;
 }
 
+/* NEW: completely disable selection inside the canvas area */
+.pattern-editor__canvas,
+.pattern-editor__canvas * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .pattern-editor__canvas canvas {
   touch-action: none;
 }

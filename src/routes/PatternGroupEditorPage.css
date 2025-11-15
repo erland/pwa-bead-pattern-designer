@@ -74,24 +74,21 @@
   margin-bottom: 0.5rem;
   background-color: var(--surface-subtle, #fafafa);
   color: var(--text-color, #222);
-  cursor: pointer; /* 👈 makes whole card show pointer */
+  cursor: pointer;
 }
-
 
 .group-editor__part-item--selected {
   border-color: var(--accent-color, #007bff);
   background-color: var(--surface-selected, #eef5ff);
-  color: var(--text-color, #222); /* keep text readable */
+  color: var(--text-color, #222);
 }
 
 .group-editor__part-main {
-  /* now just a layout container, not a button */
   width: 100%;
 }
 
 .group-editor__part-main-text {
   font-weight: 500;
-  /* ✅ explicit text color + size so it stands out */
   color: var(--text-color, #222);
   font-size: 0.95rem;
 }
@@ -160,6 +157,7 @@
 .group-editor__add-part {
   border-top: 1px solid var(--border-color, #ddd);
   padding-top: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 .group-editor__field {
@@ -216,8 +214,11 @@
   font-size: 0.95rem;
 }
 
-/* Responsive */
+/* ───────────────────────────────
+   Responsive behaviour
+   ─────────────────────────────── */
 
+/* Tablet and down – stack sidebar above editor */
 @media (max-width: 900px) {
   .group-editor__body {
     flex-direction: column;
@@ -230,5 +231,40 @@
     border-bottom: 1px solid var(--border-color, #ddd);
     padding-right: 0;
     padding-bottom: 1rem;
+  }
+}
+
+/* Phone layout tweaks */
+@media (max-width: 600px) {
+  .group-editor {
+    gap: 0.75rem;
+  }
+
+  .group-editor__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .group-editor__header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .group-editor__header-actions .group-editor__button {
+    width: auto;
+    padding-inline: 0.9rem;
+  }
+
+  .group-editor__part-item {
+    padding: 0.45rem;
+  }
+
+  .group-editor__thumbnail {
+    height: 64px;
+  }
+
+  .group-editor__add-part {
+    padding-top: 0.5rem;
   }
 }

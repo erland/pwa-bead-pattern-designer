@@ -126,10 +126,10 @@
 }
 
 /* ─────────────────────────────────────────────
-   Pattern grid (for top-level patterns only)
+   Pattern grid (patterns + groups)
    ───────────────────────────────────────────── */
 
-  .pattern-grid {
+.pattern-grid {
   margin-top: 0.5rem;
   display: grid;
   /* narrower cards so less empty side space + good for 2 columns on mobile */
@@ -154,7 +154,7 @@
   border: 1px solid var(--color-border-subtle);
   background: var(--color-list-item-bg);
   color: var(--color-text);
-  padding: 0.4rem;          /* was 0.5rem – tighter so canvas dominates */
+  padding: 0.4rem; /* tighter so canvas dominates */
   cursor: pointer;
 }
 
@@ -164,7 +164,7 @@
 
 .pattern-card__thumbnail {
   width: 100%;
-  height: 120px;            /* back to a bit taller so beads are clearer */
+  height: 120px; /* tall enough for beads to be clear */
   overflow: hidden;
   border-radius: 0.5rem;
   border: 1px solid var(--color-border-subtle);
@@ -288,4 +288,25 @@
 
 .new-pattern-dialog__actions button:hover {
   background: var(--color-dialog-button-bg-hover);
+}
+
+/* ─────────────────────────────────────────────
+   Mobile layout tweaks for home header/actions
+   ───────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .home-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .home-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .home-actions button {
+    flex: 1 1 140px; /* lets the two buttons sit side-by-side or wrap */
+  }
 }

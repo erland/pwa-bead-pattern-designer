@@ -1,15 +1,16 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
 import type { EditorUiState } from '../domain/uiState';
 import { computeBeadCounts } from '../domain/patterns';
 import type { BeadColor } from '../domain/colors';
 import { PatternCanvas } from '../editor/PatternCanvas';
+import './PatternPrintPage.css';
 
 const PRINT_EDITOR_STATE: EditorUiState = {
   selectedTool: 'pencil',
   selectedColorId: null,
-  zoom: 1,
+  zoom: 1, // was 1 – make the printed canvas noticeably larger
   panX: 0,
   panY: 0,
   gridVisible: true,
@@ -25,6 +26,16 @@ export function PatternPrintPage() {
   const palette = pattern ? store.palettes[pattern.paletteId] : undefined;
 
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // Mark body as "print-mode" while this page is mounted so we can
+  // limit the printout only to this component.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.add('pattern-print-mode');
+    return () => {
+      document.body.classList.remove('pattern-print-mode');
+    };
+  }, []);
 
   const beadLegend = useMemo(() => {
     if (!pattern || !palette) return [];
@@ -53,7 +64,7 @@ export function PatternPrintPage() {
 
   if (!projectId) {
     return (
-      <div style={{ padding: '1rem' }}>
+      <div className="pattern-print pattern-print--fallback">
         <h1>Print Pattern</h1>
         <p>No pattern id provided.</p>
       </div>
@@ -62,7 +73,7 @@ export function PatternPrintPage() {
 
   if (!pattern || !shape || !palette) {
     return (
-      <div style={{ padding: '1rem' }}>
+      <div className="pattern-print pattern-print--fallback">
         <h1>Print Pattern</h1>
         <p>Pattern not found for id: {projectId}</p>
       </div>
@@ -115,30 +126,16 @@ export function PatternPrintPage() {
   };
 
   return (
-    <div
-      style={{
-        padding: '1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-      }}
-    >
-      <header
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '0.75rem',
-        }}
-      >
+    <div className="pattern-print">
+      <header className="pattern-print__header">
         <div>
-          <h1 style={{ margin: 0 }}>Print Pattern</h1>
-          <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', opacity: 0.8 }}>
-            {pattern.name} &middot; {pattern.cols} × {pattern.rows} &middot; Palette: {palette.name}
+          {/* Main caption = pattern name */}
+          <h1 className="pattern-print__title">{pattern.name}</h1>
+          <p className="pattern-print__subtitle">
+            {pattern.cols} × {pattern.rows} &middot; Palette: {palette.name}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="pattern-print__actions">
           <button type="button" onClick={handlePrint}>
             Print
           </button>
@@ -151,31 +148,10 @@ export function PatternPrintPage() {
         </div>
       </header>
 
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          gap: '1.5rem',
-          alignItems: 'flex-start',
-          flexWrap: 'wrap',
-        }}
-      >
-        <section
-          style={{
-            flex: '2 1 320px',
-            minWidth: '280px',
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Pattern</h2>
-          <div
-            ref={canvasWrapperRef}
-            style={{
-              border: '1px solid rgba(148,163,184,0.4)',
-              borderRadius: '0.5rem',
-              padding: '0.5rem',
-              background: 'var(--color-surface, #020617)',
-            }}
-          >
+      <div className="pattern-print__layout">
+        <section className="pattern-print__pattern">
+          <h2 className="pattern-print__section-title">Pattern</h2>
+          <div ref={canvasWrapperRef} className="pattern-print__canvas-wrapper">
             <PatternCanvas
               pattern={pattern}
               shape={shape}
@@ -183,57 +159,51 @@ export function PatternPrintPage() {
               editorState={PRINT_EDITOR_STATE}
             />
           </div>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', opacity: 0.8 }}>
-            Rows: {pattern.rows}, Columns: {pattern.cols}. Use these as row/column indices when assembling.
+          <p className="pattern-print__size-hint">
+            Rows: {pattern.rows}, Columns: {pattern.cols}. Use these as row/column indices when
+            assembling.
           </p>
         </section>
 
-        <section
-          style={{
-            flex: '1 1 220px',
-            minWidth: '220px',
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Bead Legend</h2>
+        <section className="pattern-print__legend">
+          <h2 className="pattern-print__section-title">Bead Legend</h2>
           {beadLegend.length === 0 ? (
-            <p style={{ fontSize: '0.9rem' }}>No beads placed yet.</p>
+            <p className="pattern-print__legend-empty">No beads placed yet.</p>
           ) : (
-            <table
-              style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                fontSize: '0.85rem',
-              }}
-            >
+            <table className="pattern-print__legend-table">
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '0.25rem' }}>Color</th>
-                  <th style={{ textAlign: 'left', padding: '0.25rem' }}>Name</th>
-                  <th style={{ textAlign: 'right', padding: '0.25rem' }}>Count</th>
+                  <th>Color</th>
+                  <th>Name</th>
+                  <th className="pattern-print__legend-count-header">Count</th>
                 </tr>
               </thead>
               <tbody>
                 {beadLegend.map(({ color, colorId, count }) => (
                   <tr key={colorId}>
-                    <td style={{ padding: '0.25rem' }}>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          width: '1.25rem',
-                          height: '1.25rem',
-                          borderRadius: '999px',
-                          border: '1px solid rgba(148,163,184,0.7)',
-                          backgroundColor: color
-                            ? `rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`
-                            : 'transparent',
-                        }}
-                      />
+                    <td>
+                      <svg
+                        className="pattern-print__legend-swatch"
+                        viewBox="0 0 20 20"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          cx="10"
+                          cy="10"
+                          r="8"
+                          stroke="rgba(148, 163, 184, 0.7)"
+                          strokeWidth="1"
+                          fill={
+                            color ? `rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})` : 'transparent'
+                          }
+                        />
+                      </svg>
                     </td>
-                    <td style={{ padding: '0.25rem' }}>
+                    <td>
                       {color?.name ?? '(Unknown color)'}
-                      <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>{colorId}</div>
+                      <div className="pattern-print__legend-color-id">{colorId}</div>
                     </td>
-                    <td style={{ padding: '0.25rem', textAlign: 'right' }}>{count}</td>
+                    <td className="pattern-print__legend-count-cell">{count}</td>
                   </tr>
                 ))}
               </tbody>

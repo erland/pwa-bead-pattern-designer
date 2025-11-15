@@ -35,14 +35,13 @@ function drawPattern(
   const { cols, rows, grid } = pattern;
   const { cellSize, originX, originY, boardWidth, boardHeight } = layout;
 
-  // Clear
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
   // Background behind board
   ctx.fillStyle = '#f8f8f8';
   ctx.fillRect(originX, originY, boardWidth, boardHeight);
 
-  // Draw cells
+  // Cells
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
       const cx = originX + x * cellSize;
@@ -53,7 +52,6 @@ function drawPattern(
       const color = findColor(palette, cellValue);
 
       if (!valid) {
-        // Disabled cell (mask=false)
         ctx.fillStyle = '#e5e5e5';
         ctx.fillRect(cx, cy, cellSize, cellSize);
         if (editorState.gridVisible) {
@@ -64,11 +62,9 @@ function drawPattern(
         continue;
       }
 
-      // Valid board background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(cx, cy, cellSize, cellSize);
 
-      // Bead circle
       if (color) {
         const radius = (cellSize * 0.8) / 2;
         const centerX = cx + cellSize / 2;
@@ -81,7 +77,6 @@ function drawPattern(
         ctx.closePath();
         ctx.fill();
 
-        // Simple outline
         ctx.strokeStyle = 'rgba(0,0,0,0.2)';
         ctx.lineWidth = 1;
         ctx.stroke();
@@ -89,7 +84,7 @@ function drawPattern(
     }
   }
 
-  // Optional grid overlay
+  // Grid overlay
   if (editorState.gridVisible) {
     ctx.strokeStyle = 'rgba(0,0,0,0.15)';
     ctx.lineWidth = 1;
@@ -120,13 +115,11 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
 
-  // For freehand drawing (drag-to-draw)
   const isDrawingRef = useRef(false);
   const lastCellRef = useRef<{ x: number; y: number } | null>(null);
-
   const isInteractive = !!onCellPointerDown;
 
-  // Measure container size
+  // Measure container size (and keep it in sync when the container changes size)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -138,11 +131,27 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
     updateSize();
 
-    const handleResize = () => updateSize();
-    window.addEventListener('resize', handleResize);
+    // ResizeObserver reacts to ANY size change (CSS, media queries, print styles, etc.)
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const cr = entry.contentRect;
+          setSize({ width: cr.width, height: cr.height });
+        }
+      });
+      ro.observe(container);
+    }
+
+    // Fallback: still listen to window resize
+    const handleWindowResize = () => updateSize();
+    window.addEventListener('resize', handleWindowResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', handleWindowResize);
+      if (ro) {
+        ro.disconnect();
+      }
     };
   }, []);
 
@@ -171,7 +180,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     drawPattern(ctx, layout, pattern, shape, palette, editorState);
   }, [pattern, shape, palette, editorState, size]);
 
-  // Shared helper: given clientX/clientY, figure out board cell.
+  // Cell mapping helpers (unchanged)
   const getCellFromClientPoint = (point: ClientPoint) => {
     const canvas = canvasRef.current;
     if (!canvas || size.width === 0 || size.height === 0) return null;
@@ -230,23 +239,17 @@ export function PatternCanvas(props: PatternCanvasProps) {
     lastCellRef.current = null;
   };
 
-  // ─────────────────────────────────────────────
-  // Pointer events (mouse + pen; we ignore touch here)
-  // ─────────────────────────────────────────────
+  // Pointer + touch handlers (unchanged)
   const handlePointerDown: React.PointerEventHandler<HTMLCanvasElement> = (event) => {
     if (!isInteractive) return;
-
-    // If this is a touch pointer, let the native touch listeners handle it.
-    if (event.pointerType === 'touch') {
-      return;
-    }
+    if (event.pointerType === 'touch') return;
 
     event.preventDefault();
 
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
-      // some mobile browsers can throw; safe to ignore
+      // ignore
     }
 
     startDrawingAtPoint({ clientX: event.clientX, clientY: event.clientY });
@@ -274,9 +277,6 @@ export function PatternCanvas(props: PatternCanvasProps) {
     }
   };
 
-  // ─────────────────────────────────────────────
-  // Native touch events (for iOS / nested layouts)
-  // ─────────────────────────────────────────────
   useEffect(() => {
     if (!isInteractive) return;
 
@@ -287,8 +287,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
       if (!onCellPointerDown) return;
       if (ev.touches.length === 0) return;
 
-      ev.preventDefault(); // requires passive: false
-
+      ev.preventDefault();
       const touch = ev.touches[0];
       startDrawingAtPoint({ clientX: touch.clientX, clientY: touch.clientY });
     };
@@ -299,7 +298,6 @@ export function PatternCanvas(props: PatternCanvasProps) {
       if (ev.touches.length === 0) return;
 
       ev.preventDefault();
-
       const touch = ev.touches[0];
       continueDrawingAtPoint({ clientX: touch.clientX, clientY: touch.clientY });
     };
@@ -322,15 +320,11 @@ export function PatternCanvas(props: PatternCanvasProps) {
     };
   }, [isInteractive, onCellPointerDown, pattern, shape, palette, editorState]);
 
-  // ─────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────
   return (
     <div
       ref={containerRef}
       className="pattern-canvas-container"
       style={{
-        // Only block default gestures for interactive canvases
         touchAction: isInteractive ? 'none' : 'auto',
       }}
     >

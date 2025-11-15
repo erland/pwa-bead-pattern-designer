@@ -1,0 +1,243 @@
+/* Base layout for the single-pattern print page (screen) */
+
+.pattern-print {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pattern-print--fallback {
+  max-width: 720px;
+}
+
+/* Header */
+
+.pattern-print__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pattern-print__title {
+  margin: 0;
+}
+
+.pattern-print__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.pattern-print__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Main layout: pattern + legend side by side on screen */
+
+.pattern-print__layout {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.pattern-print__pattern {
+  flex: 1 1 360px;
+  min-width: 300px;
+}
+
+.pattern-print__legend {
+  flex: 0 0 220px;      /* narrower legend (~25% less visual weight) */
+  max-width: 260px;
+  min-width: 200px;
+}
+
+/* PatternCanvas sizing (SCREEN) ------------------------------------ */
+
+/* Big, square area for the pattern – this is what PatternCanvas
+   will measure, so this controls both screen and print size. */
+.pattern-print__canvas-wrapper {
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  background: var(--color-surface, #020617);
+
+  /* make the drawable area large and square */
+  width: min(70vw, 70vh);   /* uses most of the viewport */
+  max-width: 100%;
+  aspect-ratio: 1 / 1;      /* perfect for 16×16 square boards */
+
+  /* ensure the inner container can fill this box */
+  display: flex;
+}
+
+/* container that PatternCanvas uses to measure size */
+.pattern-print .pattern-canvas-container {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+}
+
+/* canvas fills the measured container and keeps aspect ratio */
+.pattern-print .pattern-canvas-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Pattern section */
+
+.pattern-print__section-title {
+  margin-top: 0;
+}
+
+.pattern-print__size-hint {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* Legend section */
+
+.pattern-print__legend-empty {
+  font-size: 0.9rem;
+}
+
+.pattern-print__legend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem; /* slightly smaller than before */
+}
+
+.pattern-print__legend-table th,
+.pattern-print__legend-table td {
+  padding: 0.25rem;
+  text-align: left;
+}
+
+.pattern-print__legend-count-header,
+.pattern-print__legend-count-cell {
+  text-align: right;
+}
+
+.pattern-print__legend-swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.pattern-print__legend-color-id {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive tweaks (screen)                                         */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 768px) {
+  .pattern-print {
+    padding: 0.75rem;
+  }
+
+  .pattern-print__layout {
+    flex-direction: column;
+  }
+
+  .pattern-print__pattern,
+  .pattern-print__legend {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* on small screens, don't let the canvas overflow vertically */
+  .pattern-print__canvas-wrapper {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 1 / 1;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Print styles                                                       */
+/* ------------------------------------------------------------------ */
+
+/* Page setup — narrower margins so the pattern can use more of the page */
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+/* Only show the .pattern-print content when this page is active.
+   The "pattern-print-mode" class is added to <body> by PatternPrintPage.tsx. */
+@media print {
+  body.pattern-print-mode * {
+    visibility: hidden;
+  }
+
+  body.pattern-print-mode .pattern-print,
+  body.pattern-print-mode .pattern-print * {
+    visibility: visible;
+  }
+
+  body.pattern-print-mode .pattern-print {
+    position: static;
+    margin: 0;
+    padding: 0.5rem;
+    box-sizing: border-box;
+  }
+
+  /* Hide the Print / Export buttons in the printout */
+  body.pattern-print-mode .pattern-print__actions {
+    display: none !important;
+  }
+
+  /* Keep pattern + legend on the same row */
+  body.pattern-print-mode .pattern-print__layout {
+    flex-direction: row;
+    flex-wrap: nowrap;        /* ⬅️ no wrapping */
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  /* Columns: ~70% pattern, ~30% legend */
+  body.pattern-print-mode .pattern-print__pattern {
+    flex: 0 0 70%;
+    min-width: 0;
+  }
+
+  body.pattern-print-mode .pattern-print__legend {
+    flex: 0 0 30%;
+    min-width: 0;
+    max-width: 30%;
+  }
+
+  /* Make the canvas fill its column (no viewport-based width in print) */
+  body.pattern-print-mode .pattern-print__canvas-wrapper {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 1 / 1;  /* keeps it square */
+  }
+
+  body.pattern-print-mode .pattern-print .pattern-canvas-container {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  body.pattern-print-mode .pattern-print .pattern-canvas-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+  }
+
+  /* Hide section titles "Pattern" / "Bead Legend" on paper */
+  body.pattern-print-mode .pattern-print__section-title {
+    display: none !important;
+  }
+}

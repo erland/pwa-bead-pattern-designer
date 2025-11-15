@@ -230,6 +230,12 @@ export function PatternGroupEditorPage() {
                         >
                           ✕
                         </button>
+
+                        {pattern && (
+                          <span className="group-editor__pattern-name">
+                            {pattern.name}
+                          </span>
+                        )}
                       </div>
 
                       {pattern && shape && palette && (

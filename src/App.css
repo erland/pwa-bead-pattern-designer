@@ -1,4 +1,13 @@
 /* ================== THEME VARIABLES ================== */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+body {
+  background-color: var(--color-bg);
+}
 /* Base defaults (in case data-theme is missing) */
 :root {
   --color-bg: #020617;
@@ -128,6 +137,12 @@
     var(--color-bg-gradient-bottom) 50%
   );
   color: var(--color-text);
+
+  /* Respect iOS safe areas when running as a PWA */
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
 }
 
 /* Header */

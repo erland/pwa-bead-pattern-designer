@@ -267,4 +267,10 @@
   .group-editor__add-part {
     padding-top: 0.5rem;
   }
+  /* Ensure the embedded pattern editor canvas in the group editor
+   behaves like the standalone editor on touch devices. */
+  .group-editor__main canvas {
+    touch-action: none;
+    pointer-events: auto;
+  }
 }

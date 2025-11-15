@@ -34,14 +34,12 @@ function drawPattern(
   const { cols, rows, grid } = pattern;
   const { cellSize, originX, originY, boardWidth, boardHeight } = layout;
 
-  // Clear
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  // Background behind board
+  // background behind board
   ctx.fillStyle = '#f8f8f8';
   ctx.fillRect(originX, originY, boardWidth, boardHeight);
 
-  // Draw cells
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
       const cx = originX + x * cellSize;
@@ -52,7 +50,6 @@ function drawPattern(
       const color = findColor(palette, cellValue);
 
       if (!valid) {
-        // Disabled cell (mask=false)
         ctx.fillStyle = '#e5e5e5';
         ctx.fillRect(cx, cy, cellSize, cellSize);
         if (editorState.gridVisible) {
@@ -63,24 +60,21 @@ function drawPattern(
         continue;
       }
 
-      // Valid board background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(cx, cy, cellSize, cellSize);
 
-      // Bead circle
       if (color) {
         const radius = (cellSize * 0.8) / 2;
         const centerX = cx + cellSize / 2;
         const centerY = cy + cellSize / 2;
-
         const { r, g, b } = color.rgb;
+
         ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.closePath();
         ctx.fill();
 
-        // Simple outline
         ctx.strokeStyle = 'rgba(0,0,0,0.2)';
         ctx.lineWidth = 1;
         ctx.stroke();
@@ -88,7 +82,6 @@ function drawPattern(
     }
   }
 
-  // Optional grid overlay
   if (editorState.gridVisible) {
     ctx.strokeStyle = 'rgba(0,0,0,0.15)';
     ctx.lineWidth = 1;
@@ -119,11 +112,9 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
 
-  // For freehand drawing (drag-to-draw)
   const isDrawingRef = useRef(false);
   const lastCellRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Measure container size
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -135,14 +126,14 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
     updateSize();
 
-    // Basic window resize listener (you can swap to ResizeObserver later)
-    window.addEventListener('resize', updateSize);
+    const handleResize = () => updateSize();
+    window.addEventListener('resize', handleResize);
+
     return () => {
-      window.removeEventListener('resize', updateSize);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
-  // Draw whenever pattern / shape / palette / editorState / size changes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -188,7 +179,6 @@ export function PatternCanvas(props: PatternCanvasProps) {
     const cell = screenToCell(px, py, layout, pattern.cols, pattern.rows);
     if (!cell) return null;
 
-    // IMPORTANT: ignore masked-out cells
     if (!isCellInShape(shape, cell.x, cell.y)) {
       return null;
     }
@@ -199,7 +189,17 @@ export function PatternCanvas(props: PatternCanvasProps) {
   const handlePointerDown: React.PointerEventHandler<HTMLCanvasElement> = (event) => {
     if (!onCellPointerDown) return;
 
-    event.currentTarget.setPointerCapture(event.pointerId);
+    // On touch devices, prevent the gesture from turning into page scroll/zoom
+    if (event.pointerType === 'touch') {
+      event.preventDefault();
+    }
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Some mobile browsers can throw here; safe to ignore.
+    }
+
     isDrawingRef.current = true;
 
     const cell = getCellFromEvent(event);
@@ -217,9 +217,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     if (!cell) return;
 
     const last = lastCellRef.current;
-    if (last && last.x === cell.x && last.y === cell.y) {
-      return;
-    }
+    if (last && last.x === cell.x && last.y === cell.y) return;
 
     lastCellRef.current = cell;
     onCellPointerDown(cell.x, cell.y);
@@ -237,13 +235,20 @@ export function PatternCanvas(props: PatternCanvasProps) {
   };
 
   return (
-    <div ref={containerRef} className="pattern-canvas-container">
+    <div
+      ref={containerRef}
+      className="pattern-canvas-container"
+      // help Safari treat this region as a non-scrollable drawing surface
+      style={{ touchAction: 'none' }}
+    >
       <canvas
         ref={canvasRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
+        // make sure nothing higher up disables interaction
+        style={{ touchAction: 'none', pointerEvents: 'auto', display: 'block' }}
       />
     </div>
   );

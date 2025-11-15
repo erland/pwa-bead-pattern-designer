@@ -77,6 +77,10 @@
   touch-action: none;
 }
 
+.pattern-editor__canvas canvas {
+  touch-action: none;
+}
+
 /* Container for the actual <canvas> */
 .pattern-canvas-container {
   width: 100%;

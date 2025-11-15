@@ -46,8 +46,16 @@
   gap: 0.5rem;
 }
 
-.home-list button {
-  width: 100%;
+/* Each row: main button + small delete button */
+.home-list__item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Main "open" button */
+.home-list__item-main {
+  flex: 1;
   text-align: left;
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
@@ -57,8 +65,24 @@
   cursor: pointer;
 }
 
-.home-list button:hover {
+.home-list__item-main:hover {
   background: var(--color-list-item-bg-hover);
+}
+
+/* Small delete pill */
+.home-list__item-delete {
+  flex-shrink: 0;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-subtle);
+  background: transparent;
+  color: var(--color-text-muted, var(--color-text));
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.home-list__item-delete:hover {
+  background: var(--color-dialog-button-bg-hover);
 }
 
 /* "Continue last project" section */

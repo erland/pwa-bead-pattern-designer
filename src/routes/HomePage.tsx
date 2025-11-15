@@ -14,14 +14,15 @@ export function HomePage() {
   const palettes = useBeadStore((state) => state.palettes);
   const createPattern = useBeadStore((state) => state.createPattern);
   const createGroup = useBeadStore((state) => state.createGroup);
+  const deletePattern = useBeadStore((state) => state.deletePattern);
+  const deleteGroup = useBeadStore((state) => state.deleteGroup);
 
   // Derived arrays for listing
   const groups = Object.values(groupsMap);
-  // 🆕 Only show patterns that are not embedded in a group
+  // Only show patterns that are not embedded in a group
   const topLevelPatterns = Object.values(patternsMap).filter(
     (p) => !p.belongsToGroupId
   );
-
 
   // Figure out "last opened" pattern from settings + current store
   const lastOpenedId = getLastOpenedPatternId();
@@ -76,6 +77,31 @@ export function HomePage() {
     navigate(`/group/${id}`);
   };
 
+  // 🆕 Delete a pattern (top-level only)
+  const handleDeletePattern = (id: string, name: string) => {
+    const confirmed = window.confirm(
+      `Delete pattern "${name}"?\n\nThis cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    // If this was the "last opened" pattern, clear it
+    if (lastOpenedId === id) {
+      setLastOpenedPatternId(null);
+    }
+
+    deletePattern(id);
+  };
+
+  // 🆕 Delete a pattern group
+  const handleDeleteGroup = (id: string, name: string) => {
+    const confirmed = window.confirm(
+      `Delete pattern group "${name}"?\n\nThis will also delete any patterns that belong only to this group.`
+    );
+    if (!confirmed) return;
+
+    deleteGroup(id);
+  };
+
   return (
     <div className="home-page">
       <header className="home-header-row">
@@ -111,9 +137,20 @@ export function HomePage() {
         ) : (
           <ul className="home-list">
             {topLevelPatterns.map((p) => (
-              <li key={p.id}>
-                <button type="button" onClick={() => openPattern(p.id)}>
+              <li key={p.id} className="home-list__item">
+                <button
+                  type="button"
+                  className="home-list__item-main"
+                  onClick={() => openPattern(p.id)}
+                >
                   {p.name}
+                </button>
+                <button
+                  type="button"
+                  className="home-list__item-delete"
+                  onClick={() => handleDeletePattern(p.id, p.name)}
+                >
+                  Delete
                 </button>
               </li>
             ))}
@@ -128,8 +165,12 @@ export function HomePage() {
         ) : (
           <ul className="home-list">
             {groups.map((g) => (
-              <li key={g.id}>
-                <button type="button" onClick={() => navigate(`/group/${g.id}`)}>
+              <li key={g.id} className="home-list__item">
+                <button
+                  type="button"
+                  className="home-list__item-main"
+                  onClick={() => navigate(`/group/${g.id}`)}
+                >
                   {g.name}
                   {g.parts.length > 0 && (
                     <span>
@@ -137,6 +178,13 @@ export function HomePage() {
                       ({g.parts.length} part{g.parts.length === 1 ? '' : 's'})
                     </span>
                   )}
+                </button>
+                <button
+                  type="button"
+                  className="home-list__item-delete"
+                  onClick={() => handleDeleteGroup(g.id, g.name)}
+                >
+                  Delete
                 </button>
               </li>
             ))}

@@ -23,6 +23,11 @@ export interface BeadPattern {
   /** Palette id used for this pattern. */
   paletteId: string;
 
+  // 🆕 Ownership flags – when set, this pattern is considered "embedded"
+  // and should not appear in the top-level Patterns list on Home.
+  belongsToGroupId?: string | null;
+  belongsToPartId?: string | null;
+  
   /** Pattern grid, row-major: grid[row][col]. */
   grid: (BeadColorId | null)[][];
 

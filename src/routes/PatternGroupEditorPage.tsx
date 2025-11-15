@@ -35,6 +35,12 @@ export function PatternGroupEditorPage() {
   const [dialogShapeId, setDialogShapeId] = useState<string>('');
   const [dialogPaletteId, setDialogPaletteId] = useState<string>('');
 
+  // 🆕 Only allow top-level patterns (not embedded in a group) to be used in the dropdown
+  const selectablePatterns = useMemo(
+    () => Object.values(patterns).filter((p) => !p.belongsToGroupId),
+    [patterns],
+  );
+
   // Keep selectedPartId valid when group changes
   useEffect(() => {
     if (!group) {
@@ -54,16 +60,14 @@ export function PatternGroupEditorPage() {
 
   // Default pattern selection for "Add part from pattern" controls
   useEffect(() => {
-    if (!newPartPatternId) {
-      const firstPatternId = Object.keys(patterns)[0];
-      if (firstPatternId) {
-        setNewPartPatternId(firstPatternId);
-        if (!newPartName) {
-          setNewPartName(patterns[firstPatternId].name);
-        }
+    if (!newPartPatternId && selectablePatterns.length > 0) {
+      const first = selectablePatterns[0];
+      setNewPartPatternId(first.id);
+      if (!newPartName) {
+        setNewPartName(first.name);
       }
     }
-  }, [patterns, newPartPatternId, newPartName]);
+  }, [selectablePatterns, newPartPatternId, newPartName]);
 
   const selectedPart = useMemo(
     () => (group ? group.parts.find((p) => p.id === selectedPartId) ?? null : null),
@@ -146,6 +150,8 @@ export function PatternGroupEditorPage() {
       cols: shape.cols,
       rows: shape.rows,
       paletteId: palette.id,
+      // mark this pattern as owned by this group
+      belongsToGroupId: group.id,
     });
 
     const partName = newPartName.trim() || patternName;
@@ -326,9 +332,9 @@ export function PatternGroupEditorPage() {
               />
             </label>
 
-            {Object.keys(patterns).length === 0 ? (
+            {selectablePatterns.length === 0 ? (
               <p className="group-editor__empty">
-                You need at least one pattern before you can add an existing pattern as a part.
+                You need at least one top-level pattern before you can add an existing pattern as a part.
               </p>
             ) : (
               <>
@@ -345,7 +351,7 @@ export function PatternGroupEditorPage() {
                       }
                     }}
                   >
-                    {Object.values(patterns).map((p) => (
+                    {selectablePatterns.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
                       </option>
@@ -391,7 +397,6 @@ export function PatternGroupEditorPage() {
           )}
         </main>
 
-        {/* New Pattern for Part dialog (same classes as HomePage) */}
         {isNewPartPatternDialogOpen && (
           <div className="new-pattern-dialog-backdrop">
             <div className="new-pattern-dialog">

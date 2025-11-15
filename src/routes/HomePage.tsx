@@ -16,8 +16,12 @@ export function HomePage() {
   const createGroup = useBeadStore((state) => state.createGroup);
 
   // Derived arrays for listing
-  const patterns = Object.values(patternsMap);
   const groups = Object.values(groupsMap);
+  // 🆕 Only show patterns that are not embedded in a group
+  const topLevelPatterns = Object.values(patternsMap).filter(
+    (p) => !p.belongsToGroupId
+  );
+
 
   // Figure out "last opened" pattern from settings + current store
   const lastOpenedId = getLastOpenedPatternId();
@@ -102,11 +106,11 @@ export function HomePage() {
           </div>
         )}
 
-        {patterns.length === 0 ? (
+        {topLevelPatterns.length === 0 ? (
           <p>No patterns yet. Create one to get started.</p>
         ) : (
           <ul className="home-list">
-            {patterns.map((p) => (
+            {topLevelPatterns.map((p) => (
               <li key={p.id}>
                 <button type="button" onClick={() => openPattern(p.id)}>
                   {p.name}

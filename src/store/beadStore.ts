@@ -18,6 +18,10 @@ type CreatePatternInput = {
   cols: number;
   rows: number;
   paletteId: string;
+
+  // 🆕 Optional ownership flags
+  belongsToGroupId?: string | null;
+  belongsToPartId?: string | null;
 };
 
 type BeadStoreActions = {
@@ -152,6 +156,10 @@ export const useBeadStore = create<BeadStoreState>((set) => ({
       grid: createEmptyGrid(input.cols, input.rows),
       createdAt: now,
       updatedAt: now,
+
+      // 🆕 propagate ownership flags
+      belongsToGroupId: input.belongsToGroupId ?? null,
+      belongsToPartId: input.belongsToPartId ?? null,
     };
 
     set((state) => ({
@@ -236,7 +244,17 @@ export const useBeadStore = create<BeadStoreState>((set) => ({
   deleteGroup: (id) => {
     set((state) => {
       const { [id]: _deleted, ...rest } = state.groups;
-      return { groups: rest };
+
+      const newPatterns: Record<string, BeadPattern> = {};
+      for (const pattern of Object.values(state.patterns)) {
+        if (pattern.belongsToGroupId === id) {
+          // skip = delete embedded pattern
+          continue;
+        }
+        newPatterns[pattern.id] = pattern;
+      }
+
+      return { groups: rest, patterns: newPatterns };
     });
   },
 

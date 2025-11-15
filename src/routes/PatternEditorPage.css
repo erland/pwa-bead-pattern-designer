@@ -72,6 +72,11 @@
   height: 100%;
 }
 
+/* Prevent the page from panning/scrolling when drawing on the grid */
+.pattern-editor__canvas {
+  touch-action: none;
+}
+
 /* Container for the actual <canvas> */
 .pattern-canvas-container {
   width: 100%;

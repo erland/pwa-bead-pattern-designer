@@ -30,6 +30,11 @@ export function PatternGroupEditorPage() {
   const [newPartName, setNewPartName] = useState('');
   const [newPartPatternId, setNewPartPatternId] = useState<string>('');
 
+  // New pattern-for-part dialog state (mirrors HomePage)
+  const [isNewPartPatternDialogOpen, setIsNewPartPatternDialogOpen] = useState(false);
+  const [dialogShapeId, setDialogShapeId] = useState<string>('');
+  const [dialogPaletteId, setDialogPaletteId] = useState<string>('');
+
   // Keep selectedPartId valid when group changes
   useEffect(() => {
     if (!group) {
@@ -47,7 +52,7 @@ export function PatternGroupEditorPage() {
     }
   }, [group, selectedPartId]);
 
-  // Default pattern selection for "Add part" controls
+  // Default pattern selection for "Add part from pattern" controls
   useEffect(() => {
     if (!newPartPatternId) {
       const firstPatternId = Object.keys(patterns)[0];
@@ -93,7 +98,7 @@ export function PatternGroupEditorPage() {
     store.updateGroup(group.id, { name: trimmed });
   };
 
-  const handleAddPart = () => {
+  const handleAddPartFromPattern = () => {
     const pattern = newPartPatternId ? patterns[newPartPatternId] : undefined;
     if (!pattern) return;
 
@@ -104,6 +109,53 @@ export function PatternGroupEditorPage() {
       patternId: pattern.id,
     });
 
+    setSelectedPartId(partId);
+  };
+
+  // Open dialog to create a new pattern for this part (shape + palette)
+  const handleOpenNewPatternPartDialog = () => {
+    const firstShape = Object.values(shapes)[0];
+    const firstPalette = Object.values(palettes)[0];
+
+    if (!firstShape || !firstPalette) {
+      window.alert('Cannot create pattern: no shapes or palettes available.');
+      return;
+    }
+
+    setDialogShapeId(firstShape.id);
+    setDialogPaletteId(firstPalette.id);
+    setIsNewPartPatternDialogOpen(true);
+  };
+
+  const handleCancelNewPatternPart = () => {
+    setIsNewPartPatternDialogOpen(false);
+  };
+
+  const handleConfirmNewPatternPart = () => {
+    const shape = dialogShapeId ? shapes[dialogShapeId] : undefined;
+    const palette = dialogPaletteId ? palettes[dialogPaletteId] : undefined;
+    if (!shape || !palette) {
+      return;
+    }
+
+    const patternName = newPartName.trim() || 'New Pattern';
+
+    const patternId = store.createPattern({
+      name: patternName,
+      shapeId: shape.id,
+      cols: shape.cols,
+      rows: shape.rows,
+      paletteId: palette.id,
+    });
+
+    const partName = newPartName.trim() || patternName;
+
+    const partId = store.addPartToGroup(group.id, {
+      name: partName,
+      patternId,
+    });
+
+    setIsNewPartPatternDialogOpen(false);
     setSelectedPartId(partId);
   };
 
@@ -181,7 +233,6 @@ export function PatternGroupEditorPage() {
                           ? 'group-editor__part-item group-editor__part-item--selected'
                           : 'group-editor__part-item'
                       }
-                      // 👇 click anywhere on the card to select/edit this part
                       onClick={() => setSelectedPartId(part.id)}
                     >
                       <div className="group-editor__part-main">
@@ -264,9 +315,20 @@ export function PatternGroupEditorPage() {
 
           <section className="group-editor__add-part">
             <h2 className="group-editor__section-title">Add Part</h2>
+
+            <label className="group-editor__field">
+              <span className="group-editor__field-label">Part name</span>
+              <input
+                type="text"
+                value={newPartName}
+                onChange={(event) => setNewPartName(event.target.value)}
+                placeholder="e.g. Front, Left wing"
+              />
+            </label>
+
             {Object.keys(patterns).length === 0 ? (
               <p className="group-editor__empty">
-                You need at least one pattern before you can add parts.
+                You need at least one pattern before you can add an existing pattern as a part.
               </p>
             ) : (
               <>
@@ -291,25 +353,23 @@ export function PatternGroupEditorPage() {
                   </select>
                 </label>
 
-                <label className="group-editor__field">
-                  <span className="group-editor__field-label">Part name</span>
-                  <input
-                    type="text"
-                    value={newPartName}
-                    onChange={(event) => setNewPartName(event.target.value)}
-                    placeholder="e.g. Front, Left wing"
-                  />
-                </label>
-
                 <button
                   type="button"
                   className="group-editor__button group-editor__button--primary"
-                  onClick={handleAddPart}
+                  onClick={handleAddPartFromPattern}
                 >
-                  Add part
+                  Add part from pattern
                 </button>
               </>
             )}
+
+            <button
+              type="button"
+              className="group-editor__button"
+              onClick={handleOpenNewPatternPartDialog}
+            >
+              Create new pattern &amp; add
+            </button>
           </section>
         </aside>
 
@@ -330,6 +390,54 @@ export function PatternGroupEditorPage() {
             />
           )}
         </main>
+
+        {/* New Pattern for Part dialog (same classes as HomePage) */}
+        {isNewPartPatternDialogOpen && (
+          <div className="new-pattern-dialog-backdrop">
+            <div className="new-pattern-dialog">
+              <h2>Create New Pattern for Part</h2>
+              <div className="new-pattern-dialog__field">
+                <label>
+                  Shape:
+                  <select
+                    value={dialogShapeId}
+                    onChange={(e) => setDialogShapeId(e.target.value)}
+                  >
+                    {Object.values(shapes).map((shape) => (
+                      <option key={shape.id} value={shape.id}>
+                        {shape.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="new-pattern-dialog__field">
+                <label>
+                  Palette:
+                  <select
+                    value={dialogPaletteId}
+                    onChange={(e) => setDialogPaletteId(e.target.value)}
+                  >
+                    {Object.values(palettes).map((palette) => (
+                      <option key={palette.id} value={palette.id}>
+                        {palette.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="new-pattern-dialog__actions">
+                <button type="button" onClick={handleCancelNewPatternPart}>
+                  Cancel
+                </button>
+                <button type="button" onClick={handleConfirmNewPatternPart}>
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

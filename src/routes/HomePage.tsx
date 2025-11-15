@@ -2,7 +2,19 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
 import { getLastOpenedPatternId, setLastOpenedPatternId } from '../settings/appSettings';
+import { PatternCanvas } from '../editor/PatternCanvas';
+import type { EditorUiState } from '../domain/uiState';
 import './HomePage.css';
+
+const HOME_THUMBNAIL_EDITOR_STATE: EditorUiState = {
+  selectedTool: 'pencil',
+  selectedColorId: null,
+  zoom: 1,
+  panX: 0,
+  panY: 0,
+  gridVisible: false,
+  outlinesVisible: false,
+};
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -145,34 +157,63 @@ export function HomePage() {
         {topLevelPatterns.length === 0 ? (
           <p>No patterns yet. Create one to get started.</p>
         ) : (
-          <ul className="home-list">
-            {topLevelPatterns.map((p) => (
-              <li key={p.id} className="home-list__item">
-                <button
-                  type="button"
-                  className="home-list__item-main"
-                  onClick={() => openPattern(p.id)}
-                >
-                  {p.name}
-                </button>
-                {/* 🆕 Print / Export button */}
-                <button
-                  type="button"
-                  className="home-list__item-secondary"
-                  onClick={() => handleOpenPrintPattern(p.id)}
-                >
-                  Print / Export
-                </button>
-                <button
-                  type="button"
-                  className="home-list__item-delete"
-                  onClick={() => handleDeletePattern(p.id, p.name)}
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="pattern-grid">
+            {topLevelPatterns.map((p) => {
+              const shape = shapes[p.shapeId];
+              const palette = palettes[p.paletteId];
+
+              const handleOpen = () => openPattern(p.id);
+
+              return (
+                <div key={p.id} className="pattern-grid__item">
+                  {/* Whole card (thumbnail + title) opens the editor */}
+                  <button
+                    type="button"
+                    className="pattern-card"
+                    onClick={handleOpen}
+                  >
+                    {shape && palette && (
+                      <div className="pattern-card__thumbnail">
+                        <PatternCanvas
+                          pattern={p}
+                          shape={shape}
+                          palette={palette}
+                          editorState={HOME_THUMBNAIL_EDITOR_STATE}
+                        />
+                      </div>
+                    )}
+                    <div className="pattern-card__title">
+                      {p.name}
+                    </div>
+                  </button>
+
+                  {/* Small actions under the card – don’t open the editor */}
+                  <div className="pattern-card__actions">
+                    <button
+                      type="button"
+                      className="home-list__item-secondary"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenPrintPattern(p.id);
+                      }}
+                    >
+                      Print / Export
+                    </button>
+                    <button
+                      type="button"
+                      className="home-list__item-delete"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeletePattern(p.id, p.name);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 
@@ -181,40 +222,72 @@ export function HomePage() {
         {groups.length === 0 ? (
           <p>No pattern groups yet.</p>
         ) : (
-          <ul className="home-list">
-            {groups.map((g) => (
-              <li key={g.id} className="home-list__item">
-                <button
-                  type="button"
-                  className="home-list__item-main"
-                  onClick={() => navigate(`/group/${g.id}`)}
-                >
-                  {g.name}
-                  {g.parts.length > 0 && (
-                    <span>
-                      {' '}
-                      ({g.parts.length} part{g.parts.length === 1 ? '' : 's'})
-                    </span>
-                  )}
-                </button>
-                {/* 🆕 Print / Export button for groups */}
-                <button
-                  type="button"
-                  className="home-list__item-secondary"
-                  onClick={() => handleOpenPrintGroup(g.id)}
-                >
-                  Print / Export
-                </button>
-                <button
-                  type="button"
-                  className="home-list__item-delete"
-                  onClick={() => handleDeleteGroup(g.id, g.name)}
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="pattern-grid">
+            {groups.map((g) => {
+              const firstPart = g.parts[0];
+
+              const pattern = firstPart ? patternsMap[firstPart.patternId] : undefined;
+              const shape = pattern ? shapes[pattern.shapeId] : undefined;
+              const palette = pattern ? palettes[pattern.paletteId] : undefined;
+
+              const handleOpenGroup = () => navigate(`/group/${g.id}`);
+
+              return (
+                <div key={g.id} className="pattern-grid__item">
+                  {/* Whole card opens the group editor */}
+                  <button
+                    type="button"
+                    className="pattern-card"
+                    onClick={handleOpenGroup}
+                  >
+                    {pattern && shape && palette && (
+                      <div className="pattern-card__thumbnail">
+                        <PatternCanvas
+                          pattern={pattern}
+                          shape={shape}
+                          palette={palette}
+                          editorState={HOME_THUMBNAIL_EDITOR_STATE}
+                        />
+                      </div>
+                    )}
+                    <div className="pattern-card__title">
+                      {g.name}
+                      {g.parts.length > 0 && (
+                        <span className="pattern-card__subtitle">
+                          {' '}
+                          ({g.parts.length} part{g.parts.length === 1 ? '' : 's'})
+                        </span>
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Actions under the card */}
+                  <div className="pattern-card__actions">
+                    <button
+                      type="button"
+                      className="home-list__item-secondary"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenPrintGroup(g.id);
+                      }}
+                    >
+                      Print / Export
+                    </button>
+                    <button
+                      type="button"
+                      className="home-list__item-delete"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteGroup(g.id, g.name);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 

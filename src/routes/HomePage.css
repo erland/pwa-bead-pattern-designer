@@ -46,8 +46,14 @@
   gap: 0.5rem;
 }
 
-/* Each row: main button + small delete button */
+/* Each item: header row (+ optional thumbnail below) */
 .home-list__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.home-list__item-header {
   display: flex;
   gap: 0.5rem;
   align-items: center;
@@ -99,6 +105,93 @@
 
 .home-list__item-secondary:hover {
   background: var(--color-dialog-button-bg-hover);
+}
+
+.home-list__item-thumbnail {
+  margin-left: 0.1rem;
+  margin-top: 0.1rem;
+  width: 100%;
+  max-width: 260px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-subtle, #020617);
+}
+
+.home-list__item-thumbnail canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ─────────────────────────────────────────────
+   Pattern grid (for top-level patterns only)
+   ───────────────────────────────────────────── */
+
+  .pattern-grid {
+    margin-top: 0.5rem;
+    display: grid;
+    /* fixed-ish card width (220–260px), don't stretch to full row */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 260px));
+    gap: 0.75rem;
+    justify-content: flex-start; /* keep cards left-aligned when there is extra space */
+  }
+
+.pattern-grid__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* Card that is fully clickable (thumbnail + title) */
+.pattern-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-list-item-bg);
+  color: var(--color-text);
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.pattern-card:hover {
+  background: var(--color-list-item-bg-hover);
+}
+
+.pattern-card__thumbnail {
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-subtle, #020617);
+  margin-bottom: 0.4rem;
+}
+
+.pattern-card__thumbnail canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.pattern-card__title {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.pattern-card__subtitle {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Actions row under each card (reusing pill styles) */
+.pattern-card__actions {
+  display: flex;
+  gap: 0.4rem;
 }
 
 /* "Continue last project" section */

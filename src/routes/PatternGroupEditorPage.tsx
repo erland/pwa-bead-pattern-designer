@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
 import type { EditorUiState } from '../domain/uiState';
@@ -35,6 +35,9 @@ export function PatternGroupEditorPage() {
   const [dialogShapeId, setDialogShapeId] = useState<string>('');
   const [dialogPaletteId, setDialogPaletteId] = useState<string>('');
 
+  // 🔽 NEW: ref for the main editor area
+  const mainEditorRef = useRef<HTMLDivElement | null>(null);
+
   // 🆕 Only allow top-level patterns (not embedded in a group) to be used in the dropdown
   const selectablePatterns = useMemo(
     () => Object.values(patterns).filter((p) => !p.belongsToGroupId),
@@ -57,6 +60,22 @@ export function PatternGroupEditorPage() {
       setSelectedPartId(group.parts[0].id);
     }
   }, [group, selectedPartId]);
+
+  // 🔽 NEW: Auto-scroll to the editor on mobile when a part is selected
+  useEffect(() => {
+    if (!selectedPartId) return;
+    if (typeof window === 'undefined') return;
+
+    // Only scroll when we're in the "stacked" layout (mobile/tablet)
+    if (window.innerWidth > 900) return;
+
+    if (!mainEditorRef.current) return;
+
+    mainEditorRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, [selectedPartId]);
 
   // Default pattern selection for "Add part from pattern" controls
   useEffect(() => {
@@ -379,7 +398,7 @@ export function PatternGroupEditorPage() {
           </section>
         </aside>
 
-        <main className="group-editor__main">
+        <main ref={mainEditorRef} className="group-editor__main">
           {!selectedPart || !selectedPatternId ? (
             <div className="group-editor__empty-main">
               <p>Select a part in the list to start editing its pattern.</p>
@@ -392,6 +411,14 @@ export function PatternGroupEditorPage() {
               onRenameTitle={(newTitle) => {
                 // Rename the part in this group from inside the editor
                 useBeadStore.getState().renamePart(group.id, selectedPart.id, newTitle);
+              }}
+              onBackToParts={() => {
+                // Scroll the *whole page* to the top so the app header + Projects menu are visible
+                window.scrollTo({
+                  top: 0,
+                  left: 0,
+                  behavior: 'smooth',
+                });
               }}
             />
           )}

@@ -5,7 +5,7 @@
   flex-direction: column;
   gap: 1rem;
 
-  /* NEW: fill .app-main vertically */
+  /* fill .app-main vertically */
   flex: 1;
   min-height: 0;
 }
@@ -15,6 +15,11 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+}
+
+/* Back button: hidden by default (desktop/tablet) */
+.pattern-editor__back-button {
+  display: none;
 }
 
 .pattern-editor__title-row {
@@ -58,7 +63,7 @@
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
 
-  /* NEW: one row that fills remaining height */
+  /* one row that fills remaining height */
   grid-template-rows: 1fr;
 
   gap: 1rem;
@@ -66,7 +71,7 @@
   flex: 1;
 }
 
-/* NEW: make both columns stretch to full row height */
+/* make both columns stretch to full row height */
 .pattern-editor__canvas,
 .pattern-editor__sidebar {
   height: 100%;
@@ -77,7 +82,7 @@
   touch-action: none;
 }
 
-/* NEW: completely disable selection inside the canvas area */
+/* completely disable selection inside the canvas area */
 .pattern-editor__canvas,
 .pattern-editor__canvas * {
   -webkit-user-select: none;
@@ -195,14 +200,16 @@
     height: auto; /* allow page to scroll naturally */
   }
 
-  /* Header: two rows
-   * - Row 1: title (left) + Save button (right)
-   * - Row 2: controls (Zoom / Grid / Outlines)
+  /* Header: three rows
+   * - Row 1: back button (if embedded) + Save
+   * - Row 2: title row
+   * - Row 3: controls (Zoom / Grid / Outlines)
    */
   .pattern-editor__header {
     display: grid;
     grid-template-columns: 1fr auto;
     grid-template-areas:
+      "back save"
       "title save"
       "controls controls";
     column-gap: 0.5rem;
@@ -210,8 +217,26 @@
     align-items: center;
   }
 
-  .pattern-editor__header h1 {
+  /* Back button visible + placed in its own grid area */
+  .pattern-editor__back-button {
+    grid-area: back;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border-subtle);
+    background: var(--color-button-bg);
+    color: var(--color-text);
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .pattern-editor__title-row {
     grid-area: title;
+  }
+
+  .pattern-editor__header h1 {
     font-size: 1rem;
     line-height: 1.2;
     margin: 0;

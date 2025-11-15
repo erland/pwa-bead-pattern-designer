@@ -25,6 +25,8 @@ export type PatternEditorProps = {
   titleOverride?: string;
   /** Optional custom rename handler (used by group editor to rename parts). */
   onRenameTitle?: (newTitle: string) => void;
+  /** Optional callback used in group editor to jump back to the parts list / top. */
+  onBackToParts?: () => void;
 };
 
 /**
@@ -36,6 +38,7 @@ export function PatternEditor({
   rememberAsLastOpened = true,
   titleOverride,
   onRenameTitle,
+  onBackToParts,
 }: PatternEditorProps) {
   const store = useBeadStore();
 
@@ -57,6 +60,9 @@ export function PatternEditor({
 
   // Effective title shown in the header
   const effectiveTitle = titleOverride ?? pattern?.name ?? 'Pattern';
+
+  // 🔹 Are we embedded inside a group editor?
+  const isEmbeddedInGroup = !!onRenameTitle || !rememberAsLastOpened;
 
   // Remember this as last opened pattern when requested
   useEffect(() => {
@@ -195,6 +201,16 @@ export function PatternEditor({
   return (
     <div className="pattern-editor">
       <header className="pattern-editor__header">
+        {isEmbeddedInGroup && onBackToParts && (
+          <button
+            type="button"
+            className="pattern-editor__back-button"
+            onClick={onBackToParts}
+          >
+            ↑ Parts
+          </button>
+        )}
+
         <div className="pattern-editor__title-row">
           <h1>{effectiveTitle}</h1>
           <button

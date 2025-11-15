@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
 import type { EditorUiState } from '../domain/uiState';
@@ -28,21 +28,14 @@ export function PatternGroupEditorPage() {
 
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [newPartName, setNewPartName] = useState('');
-  const [newPartPatternId, setNewPartPatternId] = useState<string>('');
 
   // New pattern-for-part dialog state (mirrors HomePage)
   const [isNewPartPatternDialogOpen, setIsNewPartPatternDialogOpen] = useState(false);
   const [dialogShapeId, setDialogShapeId] = useState<string>('');
   const [dialogPaletteId, setDialogPaletteId] = useState<string>('');
 
-  // 🔽 NEW: ref for the main editor area
+  // Ref for the main editor area (used for auto-scroll on mobile)
   const mainEditorRef = useRef<HTMLDivElement | null>(null);
-
-  // 🆕 Only allow top-level patterns (not embedded in a group) to be used in the dropdown
-  const selectablePatterns = useMemo(
-    () => Object.values(patterns).filter((p) => !p.belongsToGroupId),
-    [patterns],
-  );
 
   // Keep selectedPartId valid when group changes
   useEffect(() => {
@@ -61,7 +54,7 @@ export function PatternGroupEditorPage() {
     }
   }, [group, selectedPartId]);
 
-  // 🔽 NEW: Auto-scroll to the editor on mobile when a part is selected
+  // Auto-scroll to the editor on mobile when a part is selected
   useEffect(() => {
     if (!selectedPartId) return;
     if (typeof window === 'undefined') return;
@@ -76,17 +69,6 @@ export function PatternGroupEditorPage() {
       block: 'start',
     });
   }, [selectedPartId]);
-
-  // Default pattern selection for "Add part from pattern" controls
-  useEffect(() => {
-    if (!newPartPatternId && selectablePatterns.length > 0) {
-      const first = selectablePatterns[0];
-      setNewPartPatternId(first.id);
-      if (!newPartName) {
-        setNewPartName(first.name);
-      }
-    }
-  }, [selectablePatterns, newPartPatternId, newPartName]);
 
   const selectedPart = useMemo(
     () => (group ? group.parts.find((p) => p.id === selectedPartId) ?? null : null),
@@ -119,20 +101,6 @@ export function PatternGroupEditorPage() {
     const trimmed = nextName.trim();
     if (!trimmed || trimmed === group.name) return;
     store.updateGroup(group.id, { name: trimmed });
-  };
-
-  const handleAddPartFromPattern = () => {
-    const pattern = newPartPatternId ? patterns[newPartPatternId] : undefined;
-    if (!pattern) return;
-
-    const name = newPartName.trim() || pattern.name;
-
-    const partId = store.addPartToGroup(group.id, {
-      name,
-      patternId: pattern.id,
-    });
-
-    setSelectedPartId(partId);
   };
 
   // Open dialog to create a new pattern for this part (shape + palette)
@@ -351,46 +319,9 @@ export function PatternGroupEditorPage() {
               />
             </label>
 
-            {selectablePatterns.length === 0 ? (
-              <p className="group-editor__empty">
-                You need at least one top-level pattern before you can add an existing pattern as a part.
-              </p>
-            ) : (
-              <>
-                <label className="group-editor__field">
-                  <span className="group-editor__field-label">Pattern</span>
-                  <select
-                    value={newPartPatternId}
-                    onChange={(event) => {
-                      const id = event.target.value;
-                      setNewPartPatternId(id);
-                      const p = patterns[id];
-                      if (p && !newPartName) {
-                        setNewPartName(p.name);
-                      }
-                    }}
-                  >
-                    {selectablePatterns.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <button
-                  type="button"
-                  className="group-editor__button group-editor__button--primary"
-                  onClick={handleAddPartFromPattern}
-                >
-                  Add part from pattern
-                </button>
-              </>
-            )}
-
             <button
               type="button"
-              className="group-editor__button"
+              className="group-editor__button group-editor__button--primary"
               onClick={handleOpenNewPatternPartDialog}
             >
               Create new pattern &amp; add

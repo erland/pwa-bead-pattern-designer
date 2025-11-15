@@ -21,14 +21,22 @@ export type PatternEditorProps = {
   patternId: string;
   /** When true, this pattern is remembered as "last opened" in app settings. */
   rememberAsLastOpened?: boolean;
+  /** Optional custom title, e.g. part name instead of pattern name. */
+  titleOverride?: string;
+  /** Optional custom rename handler (used by group editor to rename parts). */
+  onRenameTitle?: (newTitle: string) => void;
 };
 
 /**
  * Reusable pattern editor that edits a single BeadPattern by id.
  * Used both as the standalone /editor/:projectId page and inside the group editor.
  */
-export function PatternEditor({ patternId, rememberAsLastOpened = true }: PatternEditorProps) {
-  // Read entire store once; derive what we need from it.
+export function PatternEditor({
+  patternId,
+  rememberAsLastOpened = true,
+  titleOverride,
+  onRenameTitle,
+}: PatternEditorProps) {
   const store = useBeadStore();
 
   const pattern = store.patterns[patternId];
@@ -46,6 +54,9 @@ export function PatternEditor({ patternId, rememberAsLastOpened = true }: Patter
   }));
 
   const [history, setHistory] = useState<HistoryState | null>(null);
+
+  // Effective title shown in the header
+  const effectiveTitle = titleOverride ?? pattern?.name ?? 'Pattern';
 
   // Remember this as last opened pattern when requested
   useEffect(() => {
@@ -165,10 +176,36 @@ export function PatternEditor({ patternId, rememberAsLastOpened = true }: Patter
     store.updatePattern(pattern.id, { grid: cloneGrid(next.present) });
   };
 
+  const handleRename = () => {
+    const currentTitle = effectiveTitle;
+    const next = window.prompt('Rename', currentTitle);
+    if (!next) return;
+    const trimmed = next.trim();
+    if (!trimmed || trimmed === currentTitle) return;
+
+    if (onRenameTitle) {
+      // Group editor case: rename the part
+      onRenameTitle(trimmed);
+    } else {
+      // Standalone pattern editor: rename the pattern itself
+      store.updatePattern(pattern.id, { name: trimmed });
+    }
+  };
+
   return (
     <div className="pattern-editor">
       <header className="pattern-editor__header">
-        <h1>{pattern.name}</h1>
+        <div className="pattern-editor__title-row">
+          <h1>{effectiveTitle}</h1>
+          <button
+            type="button"
+            className="pattern-editor__rename-button"
+            onClick={handleRename}
+          >
+            Rename
+          </button>
+        </div>
+
         <div className="pattern-editor__controls">
           <label>
             Zoom
@@ -198,6 +235,7 @@ export function PatternEditor({ patternId, rememberAsLastOpened = true }: Patter
             Outlines
           </label>
         </div>
+
         <div className="pattern-editor__save">
           <SaveNowButton />
         </div>
@@ -286,8 +324,8 @@ export function PatternEditor({ patternId, rememberAsLastOpened = true }: Patter
             </p>
             <p>Palette: {palette.name}</p>
             <p className="pattern-editor__hint">
-              Tip: Choose a tool and color, then click the grid to draw. Undo/Redo lets you experiment
-              freely.
+              Tip: Choose a tool and color, then click the grid to draw. Undo/Redo lets you
+              experiment freely.
             </p>
           </div>
         </aside>

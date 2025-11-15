@@ -181,12 +181,10 @@ export function PatternGroupEditorPage() {
                           ? 'group-editor__part-item group-editor__part-item--selected'
                           : 'group-editor__part-item'
                       }
+                      // 👇 click anywhere on the card to select/edit this part
+                      onClick={() => setSelectedPartId(part.id)}
                     >
-                      <button
-                        type="button"
-                        className="group-editor__part-main"
-                        onClick={() => setSelectedPartId(part.id)}
-                      >
+                      <div className="group-editor__part-main">
                         <span className="group-editor__part-main-text">
                           {part.name}{' '}
                           {pattern && (
@@ -195,14 +193,18 @@ export function PatternGroupEditorPage() {
                             </span>
                           )}
                         </span>
-                      </button>
+                      </div>
 
                       <div className="group-editor__part-actions">
                         <button
                           type="button"
                           className="group-editor__icon-button"
                           title="Move up"
-                          onClick={() => handleMovePart(part.id, 'up')}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedPartId(part.id);
+                            handleMovePart(part.id, 'up');
+                          }}
                         >
                           ↑
                         </button>
@@ -210,7 +212,11 @@ export function PatternGroupEditorPage() {
                           type="button"
                           className="group-editor__icon-button"
                           title="Move down"
-                          onClick={() => handleMovePart(part.id, 'down')}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedPartId(part.id);
+                            handleMovePart(part.id, 'down');
+                          }}
                         >
                           ↓
                         </button>
@@ -218,7 +224,11 @@ export function PatternGroupEditorPage() {
                           type="button"
                           className="group-editor__icon-button"
                           title="Rename part"
-                          onClick={() => handleRenamePart(part.id)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedPartId(part.id);
+                            handleRenamePart(part.id);
+                          }}
                         >
                           ✏️
                         </button>
@@ -226,16 +236,13 @@ export function PatternGroupEditorPage() {
                           type="button"
                           className="group-editor__icon-button group-editor__icon-button--danger"
                           title="Remove part"
-                          onClick={() => handleRemovePart(part.id)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleRemovePart(part.id);
+                          }}
                         >
                           ✕
                         </button>
-
-                        {pattern && (
-                          <span className="group-editor__pattern-name">
-                            {pattern.name}
-                          </span>
-                        )}
                       </div>
 
                       {pattern && shape && palette && (
@@ -307,12 +314,20 @@ export function PatternGroupEditorPage() {
         </aside>
 
         <main className="group-editor__main">
-          {!selectedPatternId ? (
+          {!selectedPart || !selectedPatternId ? (
             <div className="group-editor__empty-main">
               <p>Select a part in the list to start editing its pattern.</p>
             </div>
           ) : (
-            <PatternEditor patternId={selectedPatternId} rememberAsLastOpened={false} />
+            <PatternEditor
+              patternId={selectedPatternId}
+              rememberAsLastOpened={false}
+              titleOverride={selectedPart.name}
+              onRenameTitle={(newTitle) => {
+                // Rename the part in this group from inside the editor
+                useBeadStore.getState().renamePart(group.id, selectedPart.id, newTitle);
+              }}
+            />
           )}
         </main>
       </div>

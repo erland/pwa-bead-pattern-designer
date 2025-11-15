@@ -189,17 +189,16 @@ export function PatternGroupEditorPage() {
   return (
     <div className="group-editor">
       <header className="group-editor__header">
-        <div>
-          <h1>{group.name}</h1>
-          <p className="group-editor__subtitle">
-            {group.parts.length === 0
-              ? 'No parts yet'
-              : `${group.parts.length} part${group.parts.length === 1 ? '' : 's'}`}
-          </p>
-        </div>
-        <div className="group-editor__header-actions">
-          <button type="button" className="group-editor__button" onClick={handleRenameGroup}>
-            Rename group
+        <div className="group-editor__title-row">
+          <h1 className="group-editor__title">{group.name}</h1>
+          <button
+            type="button"
+            className="group-editor__icon-button group-editor__icon-button--title"
+            title="Rename group"
+            aria-label="Rename group"
+            onClick={handleRenameGroup}
+          >
+            ✏️
           </button>
         </div>
       </header>
@@ -207,7 +206,15 @@ export function PatternGroupEditorPage() {
       <div className="group-editor__body">
         <aside className="group-editor__sidebar">
           <section>
-            <h2 className="group-editor__section-title">Parts</h2>
+            <div className="group-editor__section-header">
+              <h2 className="group-editor__section-title">Parts</h2>
+              <span className="group-editor__section-count">
+                {group.parts.length === 1
+                  ? '1 part'
+                  : `${group.parts.length} parts`}
+              </span>
+            </div>
+
             {group.parts.length === 0 ? (
               <p className="group-editor__empty">This group has no parts yet.</p>
             ) : (

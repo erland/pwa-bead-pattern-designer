@@ -217,8 +217,10 @@ export function PatternEditor({
             type="button"
             className="pattern-editor__rename-button"
             onClick={handleRename}
+            title="Rename pattern"
+            aria-label="Rename pattern"
           >
-            Rename
+            ✏️
           </button>
         </div>
 

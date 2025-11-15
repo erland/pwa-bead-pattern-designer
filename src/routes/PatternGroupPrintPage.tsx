@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
 import type { EditorUiState } from '../domain/uiState';
 import { computeBeadCounts } from '../domain/patterns';
 import type { BeadColor } from '../domain/colors';
 import { PatternCanvas } from '../editor/PatternCanvas';
+import './PatternGroupPrintPage.css';
 
 const PRINT_EDITOR_STATE: EditorUiState = {
   selectedTool: 'pencil',
@@ -26,6 +27,15 @@ export function PatternGroupPrintPage() {
   const patterns = store.patterns;
   const shapes = store.shapes;
   const palettes = store.palettes;
+
+  // Mark body as "group print mode" while this page is mounted
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.add('pattern-group-print-mode');
+    return () => {
+      document.body.classList.remove('pattern-group-print-mode');
+    };
+  }, []);
 
   const initialSelected = useMemo(
     () => new Set(group?.parts.map((p) => p.id) ?? []),
@@ -50,7 +60,7 @@ export function PatternGroupPrintPage() {
 
   if (!groupId) {
     return (
-      <div style={{ padding: '1rem' }}>
+      <div className="group-print group-print--fallback">
         <h1>Print Pattern Group</h1>
         <p>No group id provided.</p>
       </div>
@@ -59,7 +69,7 @@ export function PatternGroupPrintPage() {
 
   if (!group) {
     return (
-      <div style={{ padding: '1rem' }}>
+      <div className="group-print group-print--fallback">
         <h1>Print Pattern Group</h1>
         <p>Group not found for id: {groupId}</p>
       </div>
@@ -112,6 +122,7 @@ export function PatternGroupPrintPage() {
 
   return (
     <div
+      className="group-print"
       style={{
         padding: '1rem',
         display: 'flex',
@@ -120,6 +131,7 @@ export function PatternGroupPrintPage() {
       }}
     >
       <header
+        className="group-print__header"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -129,12 +141,21 @@ export function PatternGroupPrintPage() {
         }}
       >
         <div>
-          <h1 style={{ margin: 0 }}>Print Pattern Group</h1>
-          <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', opacity: 0.8 }}>
-            {group.name} &middot; {group.parts.length} part{group.parts.length === 1 ? '' : 's'}
+          {/* Main caption = group name */}
+          <h1 className="group-print__title" style={{ margin: 0 }}>
+            {group.name}
+          </h1>
+          <p
+            className="group-print__subtitle"
+            style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', opacity: 0.8 }}
+          >
+            {group.parts.length} part{group.parts.length === 1 ? '' : 's'}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div
+          className="group-print__actions"
+          style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}
+        >
           <button type="button" onClick={handlePrint}>
             Print
           </button>
@@ -145,6 +166,7 @@ export function PatternGroupPrintPage() {
       </header>
 
       <section
+        className="group-print__body"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -152,8 +174,9 @@ export function PatternGroupPrintPage() {
           alignItems: 'flex-start',
         }}
       >
-        {/* Left: selection + layout controls */}
+        {/* Left: selection + layout controls (screen only, hidden in print) */}
         <div
+          className="group-print__sidebar"
           style={{
             minWidth: '220px',
             maxWidth: '320px',
@@ -233,7 +256,7 @@ export function PatternGroupPrintPage() {
         </div>
 
         {/* Right: rendered parts */}
-        <div style={{ flex: '1 1 0%' }}>
+        <div className="group-print__content" style={{ flex: '1 1 0%' }}>
           {partsToRender.length === 0 ? (
             <p style={{ fontSize: '0.9rem' }}>
               Select at least one part to include in the printout.
@@ -285,9 +308,10 @@ export function PatternGroupPrintPage() {
                 return (
                   <section
                     key={part.id}
+                    className="group-print__part-section"
                     style={{
                       ...wrapperStyle,
-                      border: '1px solid rgba(148,163,184,0.4)',
+                      border: '1px solid rgba(148, 163, 184, 0.4)',
                       borderRadius: '0.5rem',
                       padding: '0.75rem',
                       background: 'var(--color-surface, #020617)',
@@ -304,10 +328,13 @@ export function PatternGroupPrintPage() {
                         opacity: 0.8,
                       }}
                     >
-                      Pattern: {pattern.name} &middot; {pattern.cols} × {pattern.rows} &middot; Palette:{' '}
+                      {/* No "Pattern:" prefix here */}
+                      {pattern.name} &middot; {pattern.cols} × {pattern.rows} &middot; Palette:{' '}
                       {palette.name}
                     </p>
+
                     <div
+                      className="group-print__part-layout"
                       style={{
                         display: 'flex',
                         flexDirection: 'row',
@@ -317,12 +344,14 @@ export function PatternGroupPrintPage() {
                       }}
                     >
                       <div
+                        className="group-print__pattern-col"
                         style={{
                           flex: '2 1 240px',
                           minWidth: '220px',
                         }}
                       >
                         <div
+                          className="group-print__canvas-wrapper"
                           style={{
                             border: '1px solid rgba(148,163,184,0.4)',
                             borderRadius: '0.5rem',
@@ -344,17 +373,20 @@ export function PatternGroupPrintPage() {
                             opacity: 0.8,
                           }}
                         >
-                          Size: {pattern.cols} × {pattern.rows}. Use these as row/column indices for assembly.
+                          Size: {pattern.cols} × {pattern.rows}. Use these as row/column indices for
+                          assembly.
                         </p>
                       </div>
 
                       <div
+                        className="group-print__legend-col"
                         style={{
                           flex: '1 1 200px',
                           minWidth: '200px',
                         }}
                       >
                         <h3
+                          className="group-print__legend-title"
                           style={{
                             marginTop: 0,
                             marginBottom: '0.25rem',
@@ -384,18 +416,24 @@ export function PatternGroupPrintPage() {
                               {beadLegend.map(({ color, colorId, count }) => (
                                 <tr key={colorId}>
                                   <td style={{ padding: '0.25rem' }}>
-                                    <span
-                                      style={{
-                                        display: 'inline-block',
-                                        width: '1rem',
-                                        height: '1rem',
-                                        borderRadius: '999px',
-                                        border: '1px solid rgba(148,163,184,0.7)',
-                                        backgroundColor: color
-                                          ? `rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`
-                                          : 'transparent',
-                                      }}
-                                    />
+                                    <svg
+                                      className="group-print__legend-swatch"
+                                      viewBox="0 0 20 20"
+                                      aria-hidden="true"
+                                    >
+                                      <circle
+                                        cx="10"
+                                        cy="10"
+                                        r="8"
+                                        stroke="rgba(148, 163, 184, 0.7)"
+                                        strokeWidth="1"
+                                        fill={
+                                          color
+                                            ? `rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`
+                                            : 'transparent'
+                                        }
+                                      />
+                                    </svg>
                                   </td>
                                   <td style={{ padding: '0.25rem' }}>
                                     {color?.name ?? '(Unknown color)'}

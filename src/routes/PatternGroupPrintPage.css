@@ -1,0 +1,156 @@
+/* Basic screen layout container */
+
+.group-print--fallback {
+  padding: 1rem;
+  max-width: 720px;
+}
+
+.group-print__title {
+  margin: 0;
+}
+
+.group-print__subtitle {
+  margin: 0.25rem 0 0;
+}
+
+/* Legend SVG swatch */
+
+.group-print__legend-swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Make PatternCanvas behave nicely inside this page (screen) */
+
+.group-print .pattern-canvas-container {
+  width: 100%;
+  height: auto;
+}
+
+.group-print .pattern-canvas-container canvas {
+  display: block;
+  width: 100%;
+  height: auto; /* keep aspect ratio, no vertical stretch */
+}
+
+/* ------------------------------------------------------------------ */
+/* Print styles                                                       */
+/* ------------------------------------------------------------------ */
+
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+/* Only show the group-print content when this page is active.
+   The "pattern-group-print-mode" class is added to <body> by
+   PatternGroupPrintPage.tsx. */
+@media print {
+  body.pattern-group-print-mode * {
+    visibility: hidden;
+  }
+
+  body.pattern-group-print-mode .group-print,
+  body.pattern-group-print-mode .group-print * {
+    visibility: visible;
+  }
+
+  /* 🔹 Force text to solid black in print */
+  body.pattern-group-print-mode .group-print,
+  body.pattern-group-print-mode .group-print * {
+    color: #000 !important;
+    opacity: 1 !important;
+  }
+
+  body.pattern-group-print-mode * {
+    visibility: hidden;
+  }
+
+  body.pattern-group-print-mode .group-print,
+  body.pattern-group-print-mode .group-print * {
+    visibility: visible;
+  }
+
+  /* Let the print container fill the whole printable viewport */
+  body.pattern-group-print-mode .group-print {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide Print / Export buttons and the sidebar ("Parts to include") */
+  body.pattern-group-print-mode .group-print__actions,
+  body.pattern-group-print-mode .group-print__sidebar {
+    display: none !important;
+  }
+
+  /* Main body spacing on paper */
+  body.pattern-group-print-mode .group-print__body {
+    gap: 0.75rem;
+  }
+
+  body.pattern-group-print-mode .group-print__content {
+    flex: 1 1 auto;
+  }
+
+  /* Per-part layout: give much more room to the pattern, shrink legend ~25% */
+  body.pattern-group-print-mode .group-print__part-layout {
+    flex-wrap: nowrap;
+  }
+
+  body.pattern-group-print-mode .group-print__pattern-col {
+    flex: 4 1 0;
+    min-width: 0;
+  }
+
+  body.pattern-group-print-mode .group-print__legend-col {
+    flex: 1 1 0;
+    max-width: 22%; /* narrower legend */
+    min-width: 0;
+  }
+
+  /* Make the canvas area generous (similar feeling to single pattern) */
+  body.pattern-group-print-mode .group-print__canvas-wrapper {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    background: #ffffff !important; /* avoid dark backgrounds in print */
+    border-color: rgba(148, 163, 184, 0.6);
+  }
+
+  /* Also avoid dark background on the whole part section */
+  body.pattern-group-print-mode .group-print__part-section {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.6);
+  }
+
+  /* Let the PatternCanvas fill the wrapper and keep aspect ratio */
+  body.pattern-group-print-mode .group-print .pattern-canvas-container {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  body.pattern-group-print-mode .group-print .pattern-canvas-container canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-width: none !important;
+  }
+
+  /* Avoid unexpected page breaks inside individual part sections */
+  body.pattern-group-print-mode .group-print__part-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Drop the "Bead Legend" caption in the printout */
+  body.pattern-group-print-mode .group-print__legend-title {
+    display: none !important;
+  }
+}

@@ -71,3 +71,20 @@ export function createEmptyGrid(cols: number, rows: number): (BeadColorId | null
   }
   return grid;
 }
+
+/**
+ * Compute how many beads of each color id are used in a pattern.
+ */
+export function computeBeadCounts(pattern: BeadPattern): Record<BeadColorId, number> {
+  const counts: Record<BeadColorId, number> = {};
+  for (let y = 0; y < pattern.rows; y += 1) {
+    const row = pattern.grid[y];
+    if (!row) continue;
+    for (let x = 0; x < pattern.cols; x += 1) {
+      const colorId = row[x];
+      if (!colorId) continue;
+      counts[colorId] = (counts[colorId] ?? 0) + 1;
+    }
+  }
+  return counts;
+}

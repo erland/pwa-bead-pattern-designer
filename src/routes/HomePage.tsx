@@ -77,7 +77,7 @@ export function HomePage() {
     navigate(`/group/${id}`);
   };
 
-  // 🆕 Delete a pattern (top-level only)
+  // Delete a pattern (top-level only)
   const handleDeletePattern = (id: string, name: string) => {
     const confirmed = window.confirm(
       `Delete pattern "${name}"?\n\nThis cannot be undone.`
@@ -92,7 +92,7 @@ export function HomePage() {
     deletePattern(id);
   };
 
-  // 🆕 Delete a pattern group
+  // Delete a pattern group
   const handleDeleteGroup = (id: string, name: string) => {
     const confirmed = window.confirm(
       `Delete pattern group "${name}"?\n\nThis will also delete any patterns that belong only to this group.`
@@ -100,6 +100,16 @@ export function HomePage() {
     if (!confirmed) return;
 
     deleteGroup(id);
+  };
+
+  // 🆕 Open print / export view for a single pattern
+  const handleOpenPrintPattern = (id: string) => {
+    navigate(`/print/${id}`);
+  };
+
+  // 🆕 Open print / export view for a pattern group
+  const handleOpenPrintGroup = (id: string) => {
+    navigate(`/print-group/${id}`);
   };
 
   return (
@@ -145,6 +155,14 @@ export function HomePage() {
                 >
                   {p.name}
                 </button>
+                {/* 🆕 Print / Export button */}
+                <button
+                  type="button"
+                  className="home-list__item-secondary"
+                  onClick={() => handleOpenPrintPattern(p.id)}
+                >
+                  Print / Export
+                </button>
                 <button
                   type="button"
                   className="home-list__item-delete"
@@ -178,6 +196,14 @@ export function HomePage() {
                       ({g.parts.length} part{g.parts.length === 1 ? '' : 's'})
                     </span>
                   )}
+                </button>
+                {/* 🆕 Print / Export button for groups */}
+                <button
+                  type="button"
+                  className="home-list__item-secondary"
+                  onClick={() => handleOpenPrintGroup(g.id)}
+                >
+                  Print / Export
                 </button>
                 <button
                   type="button"

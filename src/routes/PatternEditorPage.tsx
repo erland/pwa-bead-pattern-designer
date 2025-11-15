@@ -17,13 +17,21 @@ import {
 } from '../editor/history';
 import './PatternEditorPage.css';
 
-export function PatternEditorPage() {
-  const { projectId } = useParams();
+export type PatternEditorProps = {
+  patternId: string;
+  /** When true, this pattern is remembered as "last opened" in app settings. */
+  rememberAsLastOpened?: boolean;
+};
 
+/**
+ * Reusable pattern editor that edits a single BeadPattern by id.
+ * Used both as the standalone /editor/:projectId page and inside the group editor.
+ */
+export function PatternEditor({ patternId, rememberAsLastOpened = true }: PatternEditorProps) {
   // Read entire store once; derive what we need from it.
   const store = useBeadStore();
 
-  const pattern = projectId ? store.patterns[projectId] : undefined;
+  const pattern = store.patterns[patternId];
   const shape = pattern ? store.shapes[pattern.shapeId] : undefined;
   const palette = pattern ? store.palettes[pattern.paletteId] : undefined;
 
@@ -39,40 +47,23 @@ export function PatternEditorPage() {
 
   const [history, setHistory] = useState<HistoryState | null>(null);
 
-  // Remember this as last opened pattern when the editor is mounted / projectId changes
+  // Remember this as last opened pattern when requested
   useEffect(() => {
-    if (projectId) {
-      setLastOpenedPatternId(projectId);
+    if (rememberAsLastOpened && patternId) {
+      setLastOpenedPatternId(patternId);
     }
-  }, [projectId]);
+  }, [rememberAsLastOpened, patternId]);
 
-  // Initialize history once we have a pattern and no history yet
+  // Initialize history when pattern loads
   useEffect(() => {
     if (pattern && !history) {
       setHistory(createInitialHistory(cloneGrid(pattern.grid)));
     }
   }, [pattern, history]);
 
-  if (!projectId) {
-    return (
-      <div>
-        <h1>Pattern Editor</h1>
-        <p>No project id provided.</p>
-      </div>
-    );
-  }
-
-  if (!pattern || !shape || !palette) {
-    return (
-      <div>
-        <h1>Pattern Editor</h1>
-        <p>Pattern not found for id: {projectId}</p>
-      </div>
-    );
-  }
-
   // Keep selectedColorId in sync if palette changes (e.g. initial load)
   useEffect(() => {
+    if (!palette) return;
     if (!editorState.selectedColorId && palette.colors.length > 0) {
       setEditorState((prev) => ({
         ...prev,
@@ -80,6 +71,15 @@ export function PatternEditorPage() {
       }));
     }
   }, [palette, editorState.selectedColorId]);
+
+  if (!pattern || !shape || !palette) {
+    return (
+      <div>
+        <h1>Pattern Editor</h1>
+        <p>Pattern not found for id: {patternId}</p>
+      </div>
+    );
+  }
 
   const handleZoomChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     const value = Number(event.target.value) || 1;
@@ -141,7 +141,7 @@ export function PatternEditorPage() {
       return applyChange(prev, cloneGrid(newGrid));
     });
 
-    store.updatePattern(pattern.id, { grid: newGrid });
+    store.updatePattern(pattern.id, { grid: cloneGrid(newGrid) });
   };
 
   const handleCellPointerDown = (x: number, y: number) => {
@@ -182,7 +182,11 @@ export function PatternEditorPage() {
             />
           </label>
           <label>
-            <input type="checkbox" checked={editorState.gridVisible} onChange={handleGridToggle} />
+            <input
+              type="checkbox"
+              checked={editorState.gridVisible}
+              onChange={handleGridToggle}
+            />
             Grid
           </label>
           <label>
@@ -290,4 +294,22 @@ export function PatternEditorPage() {
       </div>
     </div>
   );
+}
+
+/**
+ * Route wrapper for /editor/:projectId that just feeds the param into PatternEditor.
+ */
+export function PatternEditorPage() {
+  const { projectId } = useParams();
+
+  if (!projectId) {
+    return (
+      <div>
+        <h1>Pattern Editor</h1>
+        <p>No project id provided.</p>
+      </div>
+    );
+  }
+
+  return <PatternEditor patternId={projectId} rememberAsLastOpened />;
 }

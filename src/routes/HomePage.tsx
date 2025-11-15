@@ -127,6 +127,12 @@ export function HomePage() {
               <li key={g.id}>
                 <button type="button" onClick={() => navigate(`/group/${g.id}`)}>
                   {g.name}
+                  {g.parts.length > 0 && (
+                    <span>
+                      {' '}
+                      ({g.parts.length} part{g.parts.length === 1 ? '' : 's'})
+                    </span>
+                  )}
                 </button>
               </li>
             ))}

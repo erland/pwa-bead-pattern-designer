@@ -122,6 +122,16 @@ export function PatternEditor({
     );
   }
 
+  const fromColor =
+  replaceFromColorId != null
+    ? palette.colors.find((c) => c.id === replaceFromColorId) ?? null
+    : null;
+
+  const toColor =
+    editorState.selectedColorId != null
+      ? palette.colors.find((c) => c.id === editorState.selectedColorId) ?? null
+      : null;
+    
   const handleZoomChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     const value = Number(event.target.value) || 1;
     setEditorState((prev) => ({ ...prev, zoom: value }));
@@ -145,10 +155,21 @@ export function PatternEditor({
       setSelectionRect(null);
       setSelectionAnchor(null);
     }
+
+    // Leaving the current drawing context: cancel replace mode as well.
+    setReplaceFromColorId(null);
   };
 
   const handleSelectColor = (colorId: string) => {
     setEditorState((prev) => ({ ...prev, selectedColorId: colorId }));
+  
+    // If a "from" color is set and we pick a different "to" color,
+    // automatically replace all occurrences in the pattern, then exit replace mode.
+    if (replaceFromColorId && replaceFromColorId !== colorId) {
+      const fromId = replaceFromColorId;
+      applyHistoryChange((g) => replaceColor(g, fromId, colorId));
+      setReplaceFromColorId(null);
+    }
   };
 
   /**
@@ -326,13 +347,6 @@ export function PatternEditor({
     setReplaceFromColorId(editorState.selectedColorId);
   };
 
-  const handleReplaceColors = () => {
-    if (!replaceFromColorId || !editorState.selectedColorId) return;
-    const from = replaceFromColorId;
-    const to = editorState.selectedColorId;
-    applyHistoryChange((g) => replaceColor(g, from, to));
-  };
-
   // Mirroring
   const handleMirrorHorizontal = () => {
     applyHistoryChange((g) => mirrorGridHorizontally(g));
@@ -417,6 +431,13 @@ export function PatternEditor({
         </div>
 
         <aside className="pattern-editor__sidebar">
+          {/* Palette first, no caption */}
+          <PalettePanel
+            palette={palette}
+            selectedColorId={editorState.selectedColorId}
+            onSelectColor={handleSelectColor}
+          />
+
           <div className="pattern-editor__tools">
             <div className="pattern-editor__tool-row">
               <button
@@ -452,9 +473,6 @@ export function PatternEditor({
               >
                 🪣 Fill
               </button>
-            </div>
-
-            <div className="pattern-editor__tool-row">
               <button
                 type="button"
                 className={
@@ -465,6 +483,31 @@ export function PatternEditor({
                 onClick={() => handleSelectTool('select')}
               >
                 ⬚ Select
+              </button>
+
+              {/* One-click symmetry actions */}
+              <button
+                type="button"
+                className="tool-button"
+                onClick={handleMirrorHorizontal}
+              >
+                ↔ Mirror
+              </button>
+              <button
+                type="button"
+                className="tool-button"
+                onClick={handleMirrorVertical}
+              >
+                ↕ Mirror
+              </button>
+              {/* Global color replace: enter replace mode */}
+              <button
+                type="button"
+                className="tool-button"
+                disabled={!editorState.selectedColorId}
+                onClick={handlePickFromColor}
+              >
+                🎯 Replace
               </button>
             </div>
 
@@ -488,116 +531,97 @@ export function PatternEditor({
             </div>
           </div>
 
-          {/* Selection tools */}
-          <div className="pattern-editor__section">
-            <h2>Selection</h2>
-            <p>
-              {selectionRect
-                ? `Selected: ${selectionRect.width} × ${selectionRect.height} cells`
-                : 'No selection'}
-            </p>
-            <div className="pattern-editor__tool-row">
-              <button
-                type="button"
-                className="tool-button"
-                disabled={!selectionRect}
-                onClick={handleCopySelection}
-              >
-                📋 Copy
-              </button>
-              <button
-                type="button"
-                className="tool-button"
-                disabled={!selectionRect}
-                onClick={handleCutSelection}
-              >
-                ✂️ Cut
-              </button>
-              <button
-                type="button"
-                className="tool-button"
-                disabled={!clipboard || !selectionRect}
-                onClick={handlePasteSelection}
-              >
-                📥 Paste
-              </button>
+          {/* Selection tools – only show when there is a selection */}
+          {selectionRect && (
+            <div className="pattern-editor__section">
+              <p>
+                Selected: {selectionRect.width} × {selectionRect.height} cells
+              </p>
+              <div className="pattern-editor__tool-row">
+                <button
+                  type="button"
+                  className="tool-button"
+                  onClick={handleCopySelection}
+                >
+                  📋 Copy
+                </button>
+                <button
+                  type="button"
+                  className="tool-button"
+                  onClick={handleCutSelection}
+                >
+                  ✂️ Cut
+                </button>
+                <button
+                  type="button"
+                  className="tool-button"
+                  disabled={!clipboard}
+                  onClick={handlePasteSelection}
+                >
+                  📥 Paste
+                </button>
+              </div>
+              <div className="pattern-editor__tool-row">
+                <button
+                  type="button"
+                  className="tool-button"
+                  onClick={handleClearSelection}
+                >
+                  🧹 Clear
+                </button>
+                <button
+                  type="button"
+                  className="tool-button"
+                  onClick={handleNudgeSelectionRight}
+                >
+                  ➡️ Nudge →
+                </button>
+              </div>
             </div>
-            <div className="pattern-editor__tool-row">
-              <button
-                type="button"
-                className="tool-button"
-                disabled={!selectionRect}
-                onClick={handleClearSelection}
-              >
-                🧹 Clear
-              </button>
-              <button
-                type="button"
-                className="tool-button"
-                disabled={!selectionRect}
-                onClick={handleNudgeSelectionRight}
-              >
-                ➡️ Nudge →
-              </button>
-            </div>
-          </div>
+          )}
 
-          {/* Global color operations */}
-          <div className="pattern-editor__section">
-            <h2>Colors</h2>
-            <div className="pattern-editor__tool-row">
-              <button
-                type="button"
-                className="tool-button"
-                disabled={!editorState.selectedColorId}
-                onClick={handlePickFromColor}
-              >
-                🎯 From = current
-              </button>
-            </div>
-            <p className="pattern-editor__hint">
-              From: {replaceFromColorId ?? '—'} → To: {editorState.selectedColorId ?? '—'}
-            </p>
-            <div className="pattern-editor__tool-row">
-              <button
-                type="button"
-                className="tool-button"
-                disabled={!replaceFromColorId || !editorState.selectedColorId}
-                onClick={handleReplaceColors}
-              >
-                🔁 Replace all
-              </button>
-            </div>
-          </div>
+          {/* Global color operations – only visible while replace mode is active */}
+          {replaceFromColorId && (
+            <div className="pattern-editor__section">
+              <div className="pattern-editor__color-row">
+                <div className="pattern-editor__color-indicator">
+                  <span className="pattern-editor__color-label">From</span>
+                  {fromColor ? (
+                    <span
+                      className="pattern-editor__color-dot"
+                      title={fromColor.name}
+                      style={{
+                        backgroundColor: `rgb(${fromColor.rgb.r}, ${fromColor.rgb.g}, ${fromColor.rgb.b})`,
+                      }}
+                    />
+                  ) : (
+                    <span className="pattern-editor__color-placeholder">—</span>
+                  )}
+                </div>
 
-          {/* Mirroring */}
-          <div className="pattern-editor__section">
-            <h2>Symmetry</h2>
-            <div className="pattern-editor__tool-row">
-              <button
-                type="button"
-                className="tool-button"
-                onClick={handleMirrorHorizontal}
-              >
-                ↔ Mirror horizontally
-              </button>
-            </div>
-            <div className="pattern-editor__tool-row">
-              <button
-                type="button"
-                className="tool-button"
-                onClick={handleMirrorVertical}
-              >
-                ↕ Mirror vertically
-              </button>
-            </div>
-          </div>
+                <div className="pattern-editor__color-indicator">
+                  <span className="pattern-editor__color-label">To</span>
+                  {toColor ? (
+                    <span
+                      className="pattern-editor__color-dot"
+                      title={toColor.name}
+                      style={{
+                        backgroundColor: `rgb(${toColor.rgb.r}, ${toColor.rgb.g}, ${toColor.rgb.b})`,
+                      }}
+                    />
+                  ) : (
+                    <span className="pattern-editor__color-placeholder">—</span>
+                  )}
+                </div>
+              </div>
 
-          <PalettePanel
-            palette={palette}
-            selectedColorId={editorState.selectedColorId}
-            onSelectColor={handleSelectColor}
-          />
+              <p className="pattern-editor__hint">
+                After pressing <strong>Replace</strong>, click a different color in the palette to
+                replace all beads of the “From” color. The panel closes automatically after the
+                replacement.
+              </p>
+            </div>
+          )}
 
           <div className="pattern-editor__details">
             <h2>Details</h2>

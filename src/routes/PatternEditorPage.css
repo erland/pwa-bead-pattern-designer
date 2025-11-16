@@ -127,6 +127,7 @@
 
 .palette-panel {
   margin-top: 0.75rem;
+  margin-bottom: 0.75rem; /* gap between palette and tools */
 }
 
 .palette-panel h2 {
@@ -151,6 +152,37 @@
 .palette-panel__swatch--selected {
   outline: 2px solid #38bdf8;
   outline-offset: 2px;
+}
+
+.pattern-editor__color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.pattern-editor__color-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.pattern-editor__color-label {
+  min-width: 2.2rem; /* "From"/"To" */
+}
+
+.pattern-editor__color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.8);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8); /* light ring */
+}
+
+.pattern-editor__color-placeholder {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
 }
 
 /* Tools + details in sidebar */

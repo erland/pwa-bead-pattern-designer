@@ -1,5 +1,4 @@
 // src/editor/PatternEditorSidebar.tsx
-import React from 'react';
 import type { EditorUiState } from '../domain/uiState';
 import type { BeadPalette } from '../domain/colors';
 import type { BeadGrid, CellRect } from './tools';

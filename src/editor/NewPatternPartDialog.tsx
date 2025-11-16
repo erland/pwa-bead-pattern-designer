@@ -1,5 +1,4 @@
 // src/editor/NewPatternPartDialog.tsx
-import React from 'react';
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';
 

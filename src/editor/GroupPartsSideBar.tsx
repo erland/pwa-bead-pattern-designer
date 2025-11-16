@@ -1,5 +1,4 @@
 // src/editor/GroupPartsSidebar.tsx
-import React from 'react';
 import type { BeadPattern, PatternGroup, PatternPart } from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';

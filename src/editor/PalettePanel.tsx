@@ -1,5 +1,4 @@
 // src/editor/PalettePanel.tsx
-import React from 'react';
 import type { BeadPalette } from '../domain/colors';
 
 export interface PalettePanelProps {

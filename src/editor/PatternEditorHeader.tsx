@@ -1,5 +1,5 @@
 // src/editor/PatternEditorHeader.tsx
-import React, { type ChangeEventHandler } from 'react';
+import { type ChangeEventHandler } from 'react';
 import { SaveNowButton } from '../persistence/SaveNowButton';
 
 export interface PatternEditorHeaderProps {

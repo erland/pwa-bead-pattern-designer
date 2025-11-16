@@ -177,6 +177,12 @@
 /* Only show the .pattern-print content when this page is active.
    The "pattern-print-mode" class is added to <body> by PatternPrintPage.tsx. */
 @media print {
+  body.pattern-print-mode .pattern-print,
+  body.pattern-print-mode .pattern-print * {
+    color: #000 !important;
+    opacity: 1 !important;
+  }
+
   body.pattern-print-mode * {
     visibility: hidden;
   }

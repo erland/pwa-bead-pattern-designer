@@ -138,7 +138,6 @@ export function HomePage() {
   return (
     <div className="home-page">
       <header className="home-header-row">
-        <h1>Projects</h1>
         <div className="home-actions">
           <button type="button" onClick={handleOpenNewPatternDialog}>
             New Pattern
@@ -150,8 +149,6 @@ export function HomePage() {
       </header>
 
       <section className="home-section">
-        <h2>Patterns &amp; Groups</h2>
-
         {/* "Open last" still refers to last opened *pattern* */}
         {lastOpenedPattern && (
           <div className="home-last-opened">
@@ -166,7 +163,7 @@ export function HomePage() {
         )}
 
         {projectCards.length === 0 ? (
-          <p>No projects yet. Create a pattern or pattern group to get started.</p>
+          <p>No patterns yet. Create a pattern or pattern group to get started.</p>
         ) : (
           <div className="pattern-grid">
             {projectCards.map((card) => {

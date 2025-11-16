@@ -16,7 +16,7 @@ export default function App() {
       <header className="app-header">
         <div className="app-header__title">Bead Pattern Designer</div>
         <nav className="app-header__nav">
-          <Link to="/">Projects</Link>
+          <Link to="/">Patterns</Link>
           <Link to="/convert">Convert Image</Link>
         </nav>
         <div className="app-header__theme">

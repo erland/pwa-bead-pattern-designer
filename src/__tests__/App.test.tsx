@@ -15,7 +15,7 @@ describe('App', () => {
     expect(screen.getByText(/Bead Pattern Designer/i)).toBeInTheDocument();
 
     // Nav links should still be there in the header
-    expect(screen.getByRole('link', { name: /Projects/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Patterns/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Convert Image/i })).toBeInTheDocument();
 
     // And the /convert page heading should be rendered

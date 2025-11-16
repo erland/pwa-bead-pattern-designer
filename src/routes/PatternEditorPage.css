@@ -46,6 +46,30 @@
   filter: brightness(0.95);
 }
 
+/* Make "Save now" button look like the other tool buttons */
+.pattern-editor__save button {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-button-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.8rem;
+
+  /* Optional: match tool-button feel a bit closer */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.pattern-editor__save button:hover {
+  filter: brightness(0.97);
+}
+
+.pattern-editor__save button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
 .pattern-editor__controls {
   display: flex;
   align-items: center;

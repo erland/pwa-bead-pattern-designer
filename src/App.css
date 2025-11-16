@@ -188,6 +188,25 @@ body {
   background-color: var(--color-link-hover-bg);
 }
 
+/* Make the theme toggle look like the other pill buttons */
+.theme-toggle {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-button-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.8rem;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem; /* nice spacing between icon + text */
+}
+
+.theme-toggle:hover {
+  background: var(--color-button-bg-hover);
+}
+
 /* Main layout */
 
 .app-main {

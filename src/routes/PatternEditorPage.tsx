@@ -139,6 +139,12 @@ export function PatternEditor({
 
   const handleSelectTool = (tool: EditorUiState['selectedTool']) => {
     setEditorState((prev) => ({ ...prev, selectedTool: tool }));
+  
+    // If we leave the Select tool, clear the current selection.
+    if (tool !== 'select') {
+      setSelectionRect(null);
+      setSelectionAnchor(null);
+    }
   };
 
   const handleSelectColor = (colorId: string) => {
@@ -214,28 +220,39 @@ export function PatternEditor({
   const handleCellPointerDown = (x: number, y: number) => {
     if (!pattern || !shape) return;
     if (!isCellInShape(shape, x, y)) return;
-
+  
     if (editorState.selectedTool === 'select') {
-      // Selection: click-drag behavior using anchor + current cell
-      if (!selectionAnchor) {
-        const anchor = { x, y };
-        setSelectionAnchor(anchor);
-        setSelectionRect({
-          x,
-          y,
-          width: 1,
-          height: 1,
-        });
-      } else {
-        const rect = normaliseRect(selectionAnchor.x, selectionAnchor.y, x, y);
-        setSelectionRect(rect);
-        setSelectionAnchor(null);
-      }
+      // Start a new selection on each pointer down
+      const anchor = { x, y };
+      setSelectionAnchor(anchor);
+      setSelectionRect({
+        x,
+        y,
+        width: 1,
+        height: 1,
+      });
       return;
     }
-
-    // Other tools: draw as before
+  
+    // Other tools: apply once at pointer down
     applyToolAtCell(x, y);
+  };
+
+  const handleCellPointerMove = (x: number, y: number) => {
+    if (!pattern || !shape) return;
+    if (!isCellInShape(shape, x, y)) return;
+  
+    if (editorState.selectedTool === 'select') {
+      if (!selectionAnchor) return;
+      const rect = normaliseRect(selectionAnchor.x, selectionAnchor.y, x, y);
+      setSelectionRect(rect);
+      return;
+    }
+  
+    // For drawing tools, support drag: pencil/eraser continuous, fill only on down.
+    if (editorState.selectedTool === 'pencil' || editorState.selectedTool === 'eraser') {
+      applyToolAtCell(x, y);
+    }
   };
 
   const canUndo = !!history && history.past.length > 0;
@@ -394,6 +411,7 @@ export function PatternEditor({
             palette={palette}
             editorState={editorState}
             onCellPointerDown={handleCellPointerDown}
+            onCellPointerMove={handleCellPointerMove}
             selectionRect={selectionRect}
           />
         </div>

@@ -14,7 +14,10 @@ export interface PatternCanvasProps {
   shape: PegboardShape;
   palette: BeadPalette;
   editorState: EditorUiState;
+  /** Called on pointer down / touch start at a cell. */
   onCellPointerDown?: (x: number, y: number) => void;
+  /** Called on pointer move / touch move while pointer is down. */
+  onCellPointerMove?: (x: number, y: number) => void;
   /** Optional selection rectangle to draw as an overlay. */
   selectionRect?: CellRect | null;
 }
@@ -128,7 +131,15 @@ function drawPattern(
 }
 
 export function PatternCanvas(props: PatternCanvasProps) {
-  const { pattern, shape, palette, editorState, onCellPointerDown, selectionRect } = props;
+  const {
+    pattern,
+    shape,
+    palette,
+    editorState,
+    onCellPointerDown,
+    onCellPointerMove,
+    selectionRect,
+  } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -137,7 +148,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
   const isDrawingRef = useRef(false);
   const lastCellRef = useRef<{ x: number; y: number } | null>(null);
-  const isInteractive = !!onCellPointerDown;
+  const isInteractive = !!(onCellPointerDown || onCellPointerMove);
 
   // Measure container size (and keep it in sync when the container changes size)
   useEffect(() => {
@@ -200,7 +211,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     drawPattern(ctx, layout, pattern, shape, palette, editorState, selectionRect ?? null);
   }, [pattern, shape, palette, editorState, size, selectionRect]);
 
-  // Cell mapping helpers (unchanged)
+  // Cell mapping helpers
   const getCellFromClientPoint = (point: ClientPoint) => {
     const canvas = canvasRef.current;
     if (!canvas || size.width === 0 || size.height === 0) return null;
@@ -230,18 +241,17 @@ export function PatternCanvas(props: PatternCanvasProps) {
   };
 
   const startDrawingAtPoint = (point: ClientPoint) => {
-    if (!onCellPointerDown) return;
-
     const cell = getCellFromClientPoint(point);
     if (!cell) return;
 
     isDrawingRef.current = true;
     lastCellRef.current = cell;
-    onCellPointerDown(cell.x, cell.y);
+    if (onCellPointerDown) {
+      onCellPointerDown(cell.x, cell.y);
+    }
   };
 
   const continueDrawingAtPoint = (point: ClientPoint) => {
-    if (!onCellPointerDown) return;
     if (!isDrawingRef.current) return;
 
     const cell = getCellFromClientPoint(point);
@@ -251,7 +261,9 @@ export function PatternCanvas(props: PatternCanvasProps) {
     if (last && last.x === cell.x && last.y === cell.y) return;
 
     lastCellRef.current = cell;
-    onCellPointerDown(cell.x, cell.y);
+    if (onCellPointerMove) {
+      onCellPointerMove(cell.x, cell.y);
+    }
   };
 
   const stopDrawing = () => {
@@ -259,7 +271,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     lastCellRef.current = null;
   };
 
-  // Pointer + touch handlers (unchanged)
+  // Pointer + touch handlers
   const handlePointerDown: React.PointerEventHandler<HTMLCanvasElement> = (event) => {
     if (!isInteractive) return;
     if (event.pointerType === 'touch') return;
@@ -304,7 +316,6 @@ export function PatternCanvas(props: PatternCanvasProps) {
     if (!canvas) return;
 
     const handleTouchStart = (ev: TouchEvent) => {
-      if (!onCellPointerDown) return;
       if (ev.touches.length === 0) return;
 
       ev.preventDefault();
@@ -313,7 +324,6 @@ export function PatternCanvas(props: PatternCanvasProps) {
     };
 
     const handleTouchMove = (ev: TouchEvent) => {
-      if (!onCellPointerDown) return;
       if (!isDrawingRef.current) return;
       if (ev.touches.length === 0) return;
 
@@ -338,7 +348,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
       canvas.removeEventListener('touchend', handleTouchEnd);
       canvas.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [isInteractive, onCellPointerDown, pattern, shape, palette, editorState]);
+  }, [isInteractive, pattern, shape, palette, editorState]);
 
   return (
     <div

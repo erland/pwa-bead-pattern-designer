@@ -1,3 +1,4 @@
+// src/routes/PatternEditorPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
@@ -5,7 +6,22 @@ import { isCellInShape } from '../domain/shapes';
 import type { EditorUiState } from '../domain/uiState';
 import { PatternCanvas } from '../editor/PatternCanvas';
 import { PalettePanel } from '../editor/PalettePanel';
-import { applyPencil, applyEraser, applyFill, cloneGrid } from '../editor/tools';
+import {
+  applyPencil,
+  applyEraser,
+  applyFill,
+  cloneGrid,
+  type BeadGrid,
+  type CellRect,
+  normaliseRect,
+  copyRegion,
+  clearRegion,
+  pasteRegion,
+  moveRegion,
+  replaceColor,
+  mirrorGridHorizontally,
+  mirrorGridVertically,
+} from '../editor/tools';
 import { SaveNowButton } from '../persistence/SaveNowButton';
 import { setLastOpenedPatternId } from '../settings/appSettings';
 import {
@@ -57,6 +73,14 @@ export function PatternEditor({
   }));
 
   const [history, setHistory] = useState<HistoryState | null>(null);
+
+  // Selection & clipboard state (for advanced tools)
+  const [selectionRect, setSelectionRect] = useState<CellRect | null>(null);
+  const [selectionAnchor, setSelectionAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [clipboard, setClipboard] = useState<BeadGrid | null>(null);
+
+  // Global color replace state
+  const [replaceFromColorId, setReplaceFromColorId] = useState<string | null>(null);
 
   // Effective title shown in the header
   const effectiveTitle = titleOverride ?? pattern?.name ?? 'Pattern';
@@ -121,6 +145,40 @@ export function PatternEditor({
     setEditorState((prev) => ({ ...prev, selectedColorId: colorId }));
   };
 
+  /**
+   * Helper: get the current working grid.
+   * Prefer history.present if available, otherwise the pattern's grid.
+   */
+  const getCurrentGrid = (): BeadGrid => {
+    if (history) return history.present;
+    return pattern.grid;
+  };
+
+  /**
+   * Helper: apply a grid transformation through history + store.
+   */
+  const applyHistoryChange = (fn: (grid: BeadGrid) => BeadGrid) => {
+    setHistory((prev) => {
+      const baseGrid = prev ? prev.present : cloneGrid(pattern.grid);
+      const nextGrid = fn(baseGrid);
+      if (nextGrid === baseGrid) {
+        return prev ?? createInitialHistory(cloneGrid(baseGrid));
+      }
+
+      const nextHistory = applyChange(
+        prev ?? createInitialHistory(cloneGrid(baseGrid)),
+        cloneGrid(nextGrid),
+      );
+
+      store.updatePattern(pattern.id, { grid: cloneGrid(nextGrid) });
+      return nextHistory;
+    });
+  };
+
+  /**
+   * Basic tools: pencil / eraser / fill (unchanged behavior,
+   * but we now call through applyHistoryChange).
+   */
   const applyToolAtCell = (x: number, y: number) => {
     if (!pattern || !shape) return;
 
@@ -128,7 +186,7 @@ export function PatternEditor({
       return;
     }
 
-    const currentGrid = pattern.grid;
+    const currentGrid = getCurrentGrid();
 
     let newGrid = currentGrid;
 
@@ -141,7 +199,7 @@ export function PatternEditor({
       if (!editorState.selectedColorId) return;
       newGrid = applyFill(currentGrid, x, y, editorState.selectedColorId);
     } else {
-      // Other tools (line, rect, etc.) will be implemented in later phases
+      // Other tools handled elsewhere (e.g. 'select')
       return;
     }
 
@@ -150,18 +208,33 @@ export function PatternEditor({
       return;
     }
 
-    setHistory((prev) => {
-      if (!prev) {
-        const initial = createInitialHistory(cloneGrid(currentGrid));
-        return applyChange(initial, cloneGrid(newGrid));
-      }
-      return applyChange(prev, cloneGrid(newGrid));
-    });
-
-    store.updatePattern(pattern.id, { grid: cloneGrid(newGrid) });
+    applyHistoryChange(() => newGrid);
   };
 
   const handleCellPointerDown = (x: number, y: number) => {
+    if (!pattern || !shape) return;
+    if (!isCellInShape(shape, x, y)) return;
+
+    if (editorState.selectedTool === 'select') {
+      // Selection: click-drag behavior using anchor + current cell
+      if (!selectionAnchor) {
+        const anchor = { x, y };
+        setSelectionAnchor(anchor);
+        setSelectionRect({
+          x,
+          y,
+          width: 1,
+          height: 1,
+        });
+      } else {
+        const rect = normaliseRect(selectionAnchor.x, selectionAnchor.y, x, y);
+        setSelectionRect(rect);
+        setSelectionAnchor(null);
+      }
+      return;
+    }
+
+    // Other tools: draw as before
     applyToolAtCell(x, y);
   };
 
@@ -196,6 +269,60 @@ export function PatternEditor({
       // Standalone pattern editor: rename the pattern itself
       store.updatePattern(pattern.id, { name: trimmed });
     }
+  };
+
+  // Selection actions
+  const handleCopySelection = () => {
+    if (!selectionRect) return;
+    const grid = getCurrentGrid();
+    const region = copyRegion(grid, selectionRect);
+    setClipboard(region);
+  };
+
+  const handleCutSelection = () => {
+    if (!selectionRect) return;
+    const grid = getCurrentGrid();
+    const region = copyRegion(grid, selectionRect);
+    setClipboard(region);
+    applyHistoryChange((g) => clearRegion(g, selectionRect));
+  };
+
+  const handlePasteSelection = () => {
+    if (!clipboard || !selectionRect) return;
+    applyHistoryChange((g) => pasteRegion(g, selectionRect.x, selectionRect.y, clipboard));
+  };
+
+  const handleClearSelection = () => {
+    if (!selectionRect) return;
+    applyHistoryChange((g) => clearRegion(g, selectionRect));
+  };
+
+  const handleNudgeSelectionRight = () => {
+    if (!selectionRect) return;
+    applyHistoryChange((g) => moveRegion(g, selectionRect, 1, 0));
+    setSelectionRect((prev) => (prev ? { ...prev, x: prev.x + 1 } : prev));
+  };
+
+  // Global color operations
+  const handlePickFromColor = () => {
+    if (!editorState.selectedColorId) return;
+    setReplaceFromColorId(editorState.selectedColorId);
+  };
+
+  const handleReplaceColors = () => {
+    if (!replaceFromColorId || !editorState.selectedColorId) return;
+    const from = replaceFromColorId;
+    const to = editorState.selectedColorId;
+    applyHistoryChange((g) => replaceColor(g, from, to));
+  };
+
+  // Mirroring
+  const handleMirrorHorizontal = () => {
+    applyHistoryChange((g) => mirrorGridHorizontally(g));
+  };
+
+  const handleMirrorVertical = () => {
+    applyHistoryChange((g) => mirrorGridVertically(g));
   };
 
   return (
@@ -267,6 +394,7 @@ export function PatternEditor({
             palette={palette}
             editorState={editorState}
             onCellPointerDown={handleCellPointerDown}
+            selectionRect={selectionRect}
           />
         </div>
 
@@ -311,6 +439,20 @@ export function PatternEditor({
             <div className="pattern-editor__tool-row">
               <button
                 type="button"
+                className={
+                  editorState.selectedTool === 'select'
+                    ? 'tool-button tool-button--active'
+                    : 'tool-button'
+                }
+                onClick={() => handleSelectTool('select')}
+              >
+                ⬚ Select
+              </button>
+            </div>
+
+            <div className="pattern-editor__tool-row">
+              <button
+                type="button"
                 className="tool-button"
                 disabled={!canUndo}
                 onClick={handleUndo}
@@ -324,6 +466,111 @@ export function PatternEditor({
                 onClick={handleRedo}
               >
                 ➡️ Redo
+              </button>
+            </div>
+          </div>
+
+          {/* Selection tools */}
+          <div className="pattern-editor__section">
+            <h2>Selection</h2>
+            <p>
+              {selectionRect
+                ? `Selected: ${selectionRect.width} × ${selectionRect.height} cells`
+                : 'No selection'}
+            </p>
+            <div className="pattern-editor__tool-row">
+              <button
+                type="button"
+                className="tool-button"
+                disabled={!selectionRect}
+                onClick={handleCopySelection}
+              >
+                📋 Copy
+              </button>
+              <button
+                type="button"
+                className="tool-button"
+                disabled={!selectionRect}
+                onClick={handleCutSelection}
+              >
+                ✂️ Cut
+              </button>
+              <button
+                type="button"
+                className="tool-button"
+                disabled={!clipboard || !selectionRect}
+                onClick={handlePasteSelection}
+              >
+                📥 Paste
+              </button>
+            </div>
+            <div className="pattern-editor__tool-row">
+              <button
+                type="button"
+                className="tool-button"
+                disabled={!selectionRect}
+                onClick={handleClearSelection}
+              >
+                🧹 Clear
+              </button>
+              <button
+                type="button"
+                className="tool-button"
+                disabled={!selectionRect}
+                onClick={handleNudgeSelectionRight}
+              >
+                ➡️ Nudge →
+              </button>
+            </div>
+          </div>
+
+          {/* Global color operations */}
+          <div className="pattern-editor__section">
+            <h2>Colors</h2>
+            <div className="pattern-editor__tool-row">
+              <button
+                type="button"
+                className="tool-button"
+                disabled={!editorState.selectedColorId}
+                onClick={handlePickFromColor}
+              >
+                🎯 From = current
+              </button>
+            </div>
+            <p className="pattern-editor__hint">
+              From: {replaceFromColorId ?? '—'} → To: {editorState.selectedColorId ?? '—'}
+            </p>
+            <div className="pattern-editor__tool-row">
+              <button
+                type="button"
+                className="tool-button"
+                disabled={!replaceFromColorId || !editorState.selectedColorId}
+                onClick={handleReplaceColors}
+              >
+                🔁 Replace all
+              </button>
+            </div>
+          </div>
+
+          {/* Mirroring */}
+          <div className="pattern-editor__section">
+            <h2>Symmetry</h2>
+            <div className="pattern-editor__tool-row">
+              <button
+                type="button"
+                className="tool-button"
+                onClick={handleMirrorHorizontal}
+              >
+                ↔ Mirror horizontally
+              </button>
+            </div>
+            <div className="pattern-editor__tool-row">
+              <button
+                type="button"
+                className="tool-button"
+                onClick={handleMirrorVertical}
+              >
+                ↕ Mirror vertically
               </button>
             </div>
           </div>
@@ -342,8 +589,8 @@ export function PatternEditor({
             </p>
             <p>Palette: {palette.name}</p>
             <p className="pattern-editor__hint">
-              Tip: Choose a tool and color, then click the grid to draw. Undo/Redo lets you
-              experiment freely.
+              Tip: Choose a tool and color, then click the grid to draw. Use Select to move or copy
+              areas. Undo/Redo lets you experiment freely.
             </p>
           </div>
         </aside>

@@ -7,6 +7,7 @@ import { isCellInShape } from '../domain/shapes';
 import type { BeadPalette, BeadColor } from '../domain/colors';
 import type { EditorUiState } from '../domain/uiState';
 import { computeCanvasLayout, screenToCell, type CanvasLayout } from './canvasMath';
+import type { CellRect } from './tools';
 
 export interface PatternCanvasProps {
   pattern: BeadPattern;
@@ -14,6 +15,8 @@ export interface PatternCanvasProps {
   palette: BeadPalette;
   editorState: EditorUiState;
   onCellPointerDown?: (x: number, y: number) => void;
+  /** Optional selection rectangle to draw as an overlay. */
+  selectionRect?: CellRect | null;
 }
 
 type Size = { width: number; height: number };
@@ -31,6 +34,7 @@ function drawPattern(
   shape: PegboardShape,
   palette: BeadPalette,
   editorState: EditorUiState,
+  selectionRect?: CellRect | null,
 ) {
   const { cols, rows, grid } = pattern;
   const { cellSize, originX, originY, boardWidth, boardHeight } = layout;
@@ -105,10 +109,26 @@ function drawPattern(
       ctx.stroke();
     }
   }
+
+  // Selection overlay (if any)
+  if (selectionRect && selectionRect.width > 0 && selectionRect.height > 0) {
+    const { x, y, width, height } = selectionRect;
+    const sx = originX + x * cellSize;
+    const sy = originY + y * cellSize;
+    const sw = width * cellSize;
+    const sh = height * cellSize;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0, 150, 255, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(sx + 0.5, sy + 0.5, sw - 1, sh - 1);
+    ctx.restore();
+  }
 }
 
 export function PatternCanvas(props: PatternCanvasProps) {
-  const { pattern, shape, palette, editorState, onCellPointerDown } = props;
+  const { pattern, shape, palette, editorState, onCellPointerDown, selectionRect } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -155,7 +175,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     };
   }, []);
 
-  // Draw whenever pattern / shape / palette / editorState / size changes
+  // Draw whenever pattern / shape / palette / editorState / size / selectionRect changes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -177,8 +197,8 @@ export function PatternCanvas(props: PatternCanvasProps) {
       panY: editorState.panY,
     });
 
-    drawPattern(ctx, layout, pattern, shape, palette, editorState);
-  }, [pattern, shape, palette, editorState, size]);
+    drawPattern(ctx, layout, pattern, shape, palette, editorState, selectionRect ?? null);
+  }, [pattern, shape, palette, editorState, size, selectionRect]);
 
   // Cell mapping helpers (unchanged)
   const getCellFromClientPoint = (point: ClientPoint) => {

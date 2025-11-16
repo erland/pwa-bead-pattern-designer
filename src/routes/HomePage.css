@@ -313,6 +313,16 @@
   background: var(--color-dialog-button-bg-hover);
 }
 
+.home-template-dialog__description {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.home-template-dialog__description p {
+  margin: 0.25rem 0;
+}
+
 /* ─────────────────────────────────────────────
    Mobile layout tweaks for home header/actions
    ───────────────────────────────────────────── */

@@ -117,3 +117,20 @@ describe('Bead store – groups and parts', () => {
     expect(reordered[1]).toBe(firstId);
   });
 });
+describe('Bead store – group templates', () => {
+  it('creates a small house template group with embedded patterns', () => {
+    const state = useBeadStore.getState();
+    const groupId = state.createGroupFromTemplate('small-house-basic');
+
+    const next = useBeadStore.getState();
+    const group = next.groups[groupId];
+    expect(group).toBeDefined();
+    expect(group.parts.length).toBeGreaterThanOrEqual(4);
+
+    const firstPart = group.parts[0];
+    const pattern = next.patterns[firstPart.patternId];
+    expect(pattern).toBeDefined();
+    expect(pattern.belongsToGroupId).toBe(groupId);
+    expect(pattern.belongsToPartId).toBe(firstPart.id);
+  });
+});

@@ -6,7 +6,11 @@ import type { PegboardShape } from '../domain/shapes';
 import { isCellInShape } from '../domain/shapes';
 import type { BeadPalette, BeadColor } from '../domain/colors';
 import type { EditorUiState } from '../domain/uiState';
-import { computeCanvasLayout, screenToCell, type CanvasLayout } from './canvasMath';
+import {
+  computeCanvasLayout,
+  screenToCell,
+  type CanvasLayout,
+} from './canvasMath';
 import type { CellRect } from './tools';
 
 export interface PatternCanvasProps {
@@ -14,11 +18,8 @@ export interface PatternCanvasProps {
   shape: PegboardShape;
   palette: BeadPalette;
   editorState: EditorUiState;
-  /** Called on pointer down / touch start at a cell. */
   onCellPointerDown?: (x: number, y: number) => void;
-  /** Called on pointer move / touch move while pointer is down. */
   onCellPointerMove?: (x: number, y: number) => void;
-  /** Optional selection rectangle to draw as an overlay. */
   selectionRect?: CellRect | null;
 }
 
@@ -37,7 +38,7 @@ function drawPattern(
   shape: PegboardShape,
   palette: BeadPalette,
   editorState: EditorUiState,
-  selectionRect?: CellRect | null,
+  selectionRect: CellRect | null,
 ) {
   const { cols, rows, grid } = pattern;
   const { cellSize, originX, originY, boardWidth, boardHeight } = layout;
@@ -114,7 +115,7 @@ function drawPattern(
   }
 
   // Selection overlay (if any)
-  if (selectionRect && selectionRect.width > 0 && selectionRect.height > 0) {
+  if (selectionRect) {
     const { x, y, width, height } = selectionRect;
     const sx = originX + x * cellSize;
     const sy = originY + y * cellSize;
@@ -122,10 +123,13 @@ function drawPattern(
     const sh = height * cellSize;
 
     ctx.save();
-    ctx.strokeStyle = 'rgba(0, 150, 255, 0.9)';
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)'; // cyan-ish border
     ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
-    ctx.strokeRect(sx + 0.5, sy + 0.5, sw - 1, sh - 1);
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
+
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+    ctx.fillRect(sx + 1, sy + 1, sw - 2, sh - 2);
     ctx.restore();
   }
 }
@@ -138,7 +142,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     editorState,
     onCellPointerDown,
     onCellPointerMove,
-    selectionRect,
+    selectionRect = null,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -148,7 +152,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
   const isDrawingRef = useRef(false);
   const lastCellRef = useRef<{ x: number; y: number } | null>(null);
-  const isInteractive = !!(onCellPointerDown || onCellPointerMove);
+  const isInteractive = !!onCellPointerDown || !!onCellPointerMove;
 
   // Measure container size (and keep it in sync when the container changes size)
   useEffect(() => {
@@ -162,7 +166,6 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
     updateSize();
 
-    // ResizeObserver reacts to ANY size change (CSS, media queries, print styles, etc.)
     let ro: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
       ro = new ResizeObserver((entries) => {
@@ -174,7 +177,6 @@ export function PatternCanvas(props: PatternCanvasProps) {
       ro.observe(container);
     }
 
-    // Fallback: still listen to window resize
     const handleWindowResize = () => updateSize();
     window.addEventListener('resize', handleWindowResize);
 
@@ -186,7 +188,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     };
   }, []);
 
-  // Draw whenever pattern / shape / palette / editorState / size / selectionRect changes
+  // Draw whenever pattern / shape / palette / editorState / size / selectionRect change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -208,7 +210,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
       panY: editorState.panY,
     });
 
-    drawPattern(ctx, layout, pattern, shape, palette, editorState, selectionRect ?? null);
+    drawPattern(ctx, layout, pattern, shape, palette, editorState, selectionRect);
   }, [pattern, shape, palette, editorState, size, selectionRect]);
 
   // Cell mapping helpers
@@ -232,23 +234,20 @@ export function PatternCanvas(props: PatternCanvasProps) {
 
     const cell = screenToCell(px, py, layout, pattern.cols, pattern.rows);
     if (!cell) return null;
-
-    if (!isCellInShape(shape, cell.x, cell.y)) {
-      return null;
-    }
+    if (!isCellInShape(shape, cell.x, cell.y)) return null;
 
     return cell;
   };
 
   const startDrawingAtPoint = (point: ClientPoint) => {
+    if (!onCellPointerDown) return;
+
     const cell = getCellFromClientPoint(point);
     if (!cell) return;
 
     isDrawingRef.current = true;
     lastCellRef.current = cell;
-    if (onCellPointerDown) {
-      onCellPointerDown(cell.x, cell.y);
-    }
+    onCellPointerDown(cell.x, cell.y);
   };
 
   const continueDrawingAtPoint = (point: ClientPoint) => {
@@ -261,8 +260,12 @@ export function PatternCanvas(props: PatternCanvasProps) {
     if (last && last.x === cell.x && last.y === cell.y) return;
 
     lastCellRef.current = cell;
+
     if (onCellPointerMove) {
       onCellPointerMove(cell.x, cell.y);
+    } else if (onCellPointerDown) {
+      // Fallback so drag-drawing still works if only "down" is wired
+      onCellPointerDown(cell.x, cell.y);
     }
   };
 
@@ -271,10 +274,10 @@ export function PatternCanvas(props: PatternCanvasProps) {
     lastCellRef.current = null;
   };
 
-  // Pointer + touch handlers
+  // Pointer handlers (mouse / pen)
   const handlePointerDown: React.PointerEventHandler<HTMLCanvasElement> = (event) => {
     if (!isInteractive) return;
-    if (event.pointerType === 'touch') return;
+    if (event.pointerType === 'touch') return; // touch is handled via touch events
 
     event.preventDefault();
 
@@ -309,6 +312,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     }
   };
 
+  // Touch handlers (mobile)
   useEffect(() => {
     if (!isInteractive) return;
 
@@ -348,7 +352,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
       canvas.removeEventListener('touchend', handleTouchEnd);
       canvas.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [isInteractive, pattern, shape, palette, editorState]);
+  }, [isInteractive, onCellPointerDown, onCellPointerMove, pattern, shape, palette, editorState]);
 
   return (
     <div

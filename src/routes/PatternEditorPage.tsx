@@ -95,12 +95,28 @@ export function PatternEditor({
     }
   }, [rememberAsLastOpened, patternId]);
 
-  // Initialize history when pattern loads
+  // Reset editor state when switching to another pattern (e.g. another group part)
   useEffect(() => {
-    if (pattern && !history) {
-      setHistory(createInitialHistory(cloneGrid(pattern.grid)));
+    if (!pattern) {
+      // Pattern missing (e.g. while loading / deleted)
+      setHistory(null);
+      setSelectionRect(null);
+      setSelectionAnchor(null);
+      setClipboard(null);
+      setReplaceFromColorId(null);
+      return;
     }
-  }, [pattern, history]);
+
+    // New pattern selected: initialise history from this pattern
+    setHistory(createInitialHistory(cloneGrid(pattern.grid)));
+
+    // Also clear selection / clipboard / replace mode so they are per-pattern
+    setSelectionRect(null);
+    setSelectionAnchor(null);
+    setClipboard(null);
+    setReplaceFromColorId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patternId]);
 
   // Keep selectedColorId in sync if palette changes (e.g. initial load)
   useEffect(() => {

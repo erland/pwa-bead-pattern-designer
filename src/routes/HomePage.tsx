@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useBeadStore,
-  GROUP_TEMPLATES,
-  type GroupTemplateId,
 } from '../store/beadStore';
 import { getLastOpenedPatternId, setLastOpenedPatternId } from '../settings/appSettings';
 import { PatternCanvas } from '../editor/PatternCanvas';
@@ -30,9 +28,16 @@ export function HomePage() {
   const palettes = useBeadStore((state) => state.palettes);
   const createPattern = useBeadStore((state) => state.createPattern);
   const createGroup = useBeadStore((state) => state.createGroup);
-  const createGroupFromTemplate = useBeadStore((state) => state.createGroupFromTemplate);
   const deletePattern = useBeadStore((state) => state.deletePattern);
   const deleteGroup = useBeadStore((state) => state.deleteGroup);
+
+  const createGroupFromTemplateGroup = useBeadStore(
+    (state) => state.createGroupFromTemplateGroup,
+  );
+
+  const templateGroups = Object.values(groupsMap).filter(
+    (g) => g.isTemplate,
+  );
 
   // Derived arrays
   const groups = Object.values(groupsMap);
@@ -64,8 +69,7 @@ export function HomePage() {
 
   // --- Template picker dialog state ---
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] =
-    useState<GroupTemplateId | null>(null); 
+  const [selectedTemplateGroupId, setSelectedTemplateGroupId] = useState<string | null>(null);
 
   const handleOpenNewPatternDialog = () => {
     const firstShape = Object.values(shapes)[0];
@@ -111,8 +115,8 @@ export function HomePage() {
   };
 
   const handleOpenTemplateDialog = () => {
-    const firstTemplateId = Object.keys(GROUP_TEMPLATES)[0] as GroupTemplateId;
-    setSelectedTemplateId((current) => current ?? firstTemplateId);
+    const firstTemplate = templateGroups[0];
+    setSelectedTemplateGroupId((current) => current ?? firstTemplate?.id ?? null);
     setIsTemplateDialogOpen(true);
   };
 
@@ -121,11 +125,10 @@ export function HomePage() {
   };
 
   const handleConfirmTemplateDialog = () => {
-    if (!selectedTemplateId) return;
-
-    const id = createGroupFromTemplate(selectedTemplateId);
+    if (!selectedTemplateGroupId) return;
+    const newGroupId = createGroupFromTemplateGroup(selectedTemplateGroupId);
     setIsTemplateDialogOpen(false);
-    navigate(`/group/${id}`);
+    navigate(`/group/${newGroupId}`);
   };
 
   // Delete a pattern (top-level only)
@@ -366,36 +369,39 @@ export function HomePage() {
           <div className="new-pattern-dialog">
             <h2>Create Group from Template</h2>
 
-            <div className="new-pattern-dialog__field">
-              <label>
-                Template:
-                <select
-                  value={selectedTemplateId ?? ''}
-                  onChange={(e) =>
-                    setSelectedTemplateId(
-                      e.target.value
-                        ? (e.target.value as GroupTemplateId)
-                        : null,
-                    )
-                  }
-                >
-                  {Object.values(GROUP_TEMPLATES).map((tpl) => (
-                    <option key={tpl.id} value={tpl.id}>
-                      {tpl.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+            {templateGroups.length === 0 ? (
+              <p>No templates defined yet. Mark a group as template in the editor to use it here.</p>
+            ) : (
+              <>
+                <div className="new-pattern-dialog__field">
+                  <label>
+                    Template:
+                    <select
+                      value={selectedTemplateGroupId ?? ''}
+                      onChange={(e) =>
+                        setSelectedTemplateGroupId(e.target.value || null)
+                      }
+                    >
+                      {templateGroups.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
 
-            {selectedTemplateId && (
-              <div className="new-pattern-dialog__field home-template-dialog__description">
-                <p>{GROUP_TEMPLATES[selectedTemplateId].description}</p>
-                <p>
-                  <strong>Parts:</strong>{' '}
-                  {GROUP_TEMPLATES[selectedTemplateId].parts.join(', ')}
-                </p>
-              </div>
+                {selectedTemplateGroupId && (
+                  <div className="new-pattern-dialog__field home-template-dialog__description">
+                    <p>
+                      <strong>Parts:</strong>{' '}
+                      {groupsMap[selectedTemplateGroupId]?.parts
+                        .map((p) => p.name)
+                        .join(', ')}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="new-pattern-dialog__actions">
@@ -405,7 +411,7 @@ export function HomePage() {
               <button
                 type="button"
                 onClick={handleConfirmTemplateDialog}
-                disabled={!selectedTemplateId}
+                disabled={!selectedTemplateGroupId}
               >
                 Create Group
               </button>

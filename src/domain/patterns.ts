@@ -56,6 +56,10 @@ export interface PatternGroup {
   id: string;
   name: string;
   parts: PatternPart[];
+
+  /** If true, this group is shown in the "New from Template" dialog. */
+  isTemplate?: boolean;
+  
   assemblyMetadata?: AssemblyMetadata;
 }
 

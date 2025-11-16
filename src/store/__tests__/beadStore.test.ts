@@ -116,21 +116,55 @@ describe('Bead store – groups and parts', () => {
     expect(reordered[0]).toBe(secondId);
     expect(reordered[1]).toBe(firstId);
   });
-});
-describe('Bead store – group templates', () => {
-  it('creates a small house template group with embedded patterns', () => {
+  it('creates a new group from a template group with cloned parts and patterns', () => {
     const state = useBeadStore.getState();
-    const groupId = state.createGroupFromTemplate('small-house-basic');
+
+    // Use the first existing group from seed as our “template group”
+    const templateGroupId = Object.keys(state.groups)[0];
+    const templateGroup = state.groups[templateGroupId];
+    expect(templateGroup).toBeDefined();
+
+    // Mark it as a template to simulate real usage
+    state.markGroupAsTemplate(templateGroupId, true, 'Demo template');
+
+    // Take the first part/pattern as reference for cloning behavior
+    const templatePart = templateGroup.parts[0];
+    const originalPattern = state.patterns[templatePart.patternId];
+    expect(originalPattern).toBeDefined();
+
+    const newGroupId = state.createGroupFromTemplateGroup(templateGroupId);
 
     const next = useBeadStore.getState();
-    const group = next.groups[groupId];
-    expect(group).toBeDefined();
-    expect(group.parts.length).toBeGreaterThanOrEqual(4);
+    const newGroup = next.groups[newGroupId];
+    expect(newGroup).toBeDefined();
+    expect(newGroup.id).toBe(newGroupId);
+    expect(newGroup.name).toBe(templateGroup.name);
 
-    const firstPart = group.parts[0];
-    const pattern = next.patterns[firstPart.patternId];
-    expect(pattern).toBeDefined();
-    expect(pattern.belongsToGroupId).toBe(groupId);
-    expect(pattern.belongsToPartId).toBe(firstPart.id);
+    // Same number of parts as the template
+    expect(newGroup.parts.length).toBe(templateGroup.parts.length);
+
+    // New group should NOT be marked as template
+    expect(newGroup.isTemplate).toBe(false);
+
+    // Check first part/pattern cloning
+    const newPart = newGroup.parts[0];
+    const clonedPattern = next.patterns[newPart.patternId];
+    expect(clonedPattern).toBeDefined();
+
+    // Different pattern id than the original
+    expect(clonedPattern.id).not.toBe(originalPattern.id);
+
+    // Ownership updated to the new group/part
+    expect(clonedPattern.belongsToGroupId).toBe(newGroupId);
+    expect(clonedPattern.belongsToPartId).toBe(newPart.id);
+
+    // Grid deep-cloned: same content, different references
+    expect(clonedPattern.grid).toEqual(originalPattern.grid);
+    expect(clonedPattern.grid).not.toBe(originalPattern.grid);
+
+    if (clonedPattern.grid.length > 0 && originalPattern.grid.length > 0) {
+      expect(clonedPattern.grid[0]).toEqual(originalPattern.grid[0]);
+      expect(clonedPattern.grid[0]).not.toBe(originalPattern.grid[0]);
+    }
   });
 });

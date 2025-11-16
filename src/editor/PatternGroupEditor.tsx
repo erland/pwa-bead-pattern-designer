@@ -87,6 +87,11 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
     store.updateGroup(group.id, { name: trimmed });
   };
 
+  const handleToggleTemplate = (checked: boolean) => {
+    // mark/unmark this group as a template
+    store.markGroupAsTemplate(group.id, checked);
+  };
+
   // ───────────────────────────────────────────────────────────────
   // New pattern-for-part dialog state & handlers
   // ───────────────────────────────────────────────────────────────
@@ -196,6 +201,17 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
             ✏️
           </button>
         </div>
+
+        <div className="group-editor__template-row">
+          <label className="group-editor__template-checkbox">
+            <input
+              type="checkbox"
+              checked={!!group.isTemplate}
+              onChange={(e) => handleToggleTemplate(e.target.checked)}
+            />
+            Use this group as a template
+          </label>
+        </div>
       </header>
 
       <div className="group-editor__body">
@@ -226,7 +242,9 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
               titleOverride={selectedPart.name}
               onRenameTitle={(newTitle) => {
                 // Rename the part in this group from inside the editor
-                useBeadStore.getState().renamePart(group.id, selectedPart.id, newTitle);
+                useBeadStore
+                  .getState()
+                  .renamePart(group.id, selectedPart.id, newTitle);
               }}
               onBackToParts={() => {
                 window.scrollTo({

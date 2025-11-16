@@ -24,49 +24,14 @@ type CreatePatternInput = {
   belongsToPartId?: string | null;
 };
 
-// ─────────────────────────────────────────────────────────────
-// Group templates (used for preset 3D projects / pattern groups)
-// ─────────────────────────────────────────────────────────────
-
-export type GroupTemplateId = 'small-house-basic' | 'cube-basic';;
-
-export type GroupTemplate = {
-  id: GroupTemplateId;
-  name: string; // Group name to create
-  description: string;
-  parts: string[]; // Names of parts that will be created
-};
-
-export const GROUP_TEMPLATES: Record<GroupTemplateId, GroupTemplate> = {
-  'small-house-basic': {
-    id: 'small-house-basic',
-    name: 'Small House',
-    description: 'Walls and roof for a small house. Creates a group with multiple parts.',
-    parts: ['Front Wall', 'Back Wall', 'Left Wall', 'Right Wall', 'Roof'],
-  },
-  'cube-basic': {
-    id: 'cube-basic',
-    name: 'Cube',
-    description:
-      'Six faces for a simple cube: front, back, left, right, top, and bottom.',
-    parts: [
-      'Front Face',
-      'Back Face',
-      'Left Face',
-      'Right Face',
-      'Top Face',
-      'Bottom Face',
-    ],
-  },
-};
-
 type BeadStoreActions = {
   createPattern: (input: CreatePatternInput) => string;
   updatePattern: (id: string, updates: Partial<Omit<BeadPattern, 'id'>>) => void;
   deletePattern: (id: string) => void;
 
   createGroup: (name: string) => string;
-  createGroupFromTemplate: (templateId: GroupTemplateId) => string;
+  markGroupAsTemplate: (groupId: string, isTemplate: boolean, description?: string) => void;
+  createGroupFromTemplateGroup: (templateGroupId: string) => string;
   updateGroup: (id: string, updates: Partial<Omit<PatternGroup, 'id'>>) => void;
   deleteGroup: (id: string) => void;
 
@@ -261,64 +226,80 @@ export const useBeadStore = create<BeadStoreState>((set) => ({
     return id;
   },
 
-  createGroupFromTemplate: (templateId) => {
+  markGroupAsTemplate: (groupId, isTemplate) => {
+    set((state) => {
+      const group = state.groups[groupId];
+      if (!group) return {};
+
+      return {
+        groups: {
+          ...state.groups,
+          [groupId]: {
+            ...group,
+            isTemplate,
+          },
+        },
+      };
+    });
+  },
+
+  createGroupFromTemplateGroup: (templateGroupId) => {
     const groupId = createId('group');
     const now = new Date().toISOString();
-
+  
     set((state) => {
-      const template = GROUP_TEMPLATES[templateId];
-      const palette = Object.values(state.palettes)[0];
-      const baseShape =
-        state.shapes['shape-square-16'] ?? Object.values(state.shapes)[0];
-
-      // If prerequisites are missing, leave state unchanged.
-      if (!template || !palette || !baseShape) {
+      const templateGroup = state.groups[templateGroupId];
+      if (!templateGroup) {
+        // no change
         return {};
       }
-
+  
       const patterns: Record<string, BeadPattern> = { ...state.patterns };
       const parts: PatternPart[] = [];
-
-      for (const partName of template.parts) {
-        const partId = createId('part');
-        const patternId = createId('pattern');
-
-        patterns[patternId] = {
-          id: patternId,
-          name: partName,
-          shapeId: baseShape.id,
-          cols: baseShape.cols,
-          rows: baseShape.rows,
-          paletteId: palette.id,
-          grid: createEmptyGrid(baseShape.cols, baseShape.rows),
+  
+      for (const templatePart of templateGroup.parts) {
+        const templatePattern = patterns[templatePart.patternId];
+        if (!templatePattern) continue; // skip if corrupted
+  
+        const newPartId = createId('part');
+        const newPatternId = createId('pattern');
+  
+        // Deep copy pattern for this part
+        patterns[newPatternId] = {
+          ...templatePattern,
+          id: newPatternId,
+          name: templatePattern.name, // or templatePart.name if you prefer
           createdAt: now,
           updatedAt: now,
           belongsToGroupId: groupId,
-          belongsToPartId: partId,
+          belongsToPartId: newPartId,
+          grid: templatePattern.grid.map((row) => [...row]),
         };
-
+  
         parts.push({
-          id: partId,
-          name: partName,
-          patternId,
+          id: newPartId,
+          name: templatePart.name,
+          patternId: newPatternId,
         });
       }
-
-      const group: PatternGroup = {
+  
+      const newGroup: PatternGroup = {
         id: groupId,
-        name: template.name,
+        name: templateGroup.name,
         parts,
+        // 🔴 New group is *not* a template, even if the source was
+        isTemplate: false,
       };
-
+  
       return {
         patterns,
         groups: {
           ...state.groups,
-          [groupId]: group,
+          [groupId]: newGroup,
         },
       };
     });
-
+  
     return groupId;
   },
 

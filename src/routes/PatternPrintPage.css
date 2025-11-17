@@ -37,6 +37,20 @@
   flex-wrap: wrap;
 }
 
+.pattern-print__actions button {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-button-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.pattern-print__actions button:hover {
+  background: var(--color-button-bg-hover);
+}
+
 /* Main layout: pattern + legend side by side on screen */
 
 .pattern-print__layout {

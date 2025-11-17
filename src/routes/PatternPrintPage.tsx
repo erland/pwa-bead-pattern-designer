@@ -159,10 +159,6 @@ export function PatternPrintPage() {
               editorState={PRINT_EDITOR_STATE}
             />
           </div>
-          <p className="pattern-print__size-hint">
-            Rows: {pattern.rows}, Columns: {pattern.cols}. Use these as row/column indices when
-            assembling.
-          </p>
         </section>
 
         <section className="pattern-print__legend">

@@ -329,7 +329,7 @@ export function PatternGroupPrintPage() {
                       }}
                     >
                       {/* No "Pattern:" prefix here */}
-                      {pattern.name} &middot; {pattern.cols} × {pattern.rows} &middot; Palette:{' '}
+                      {pattern.cols} × {pattern.rows} &middot; Palette:{' '}
                       {palette.name}
                     </p>
 
@@ -366,16 +366,6 @@ export function PatternGroupPrintPage() {
                             editorState={PRINT_EDITOR_STATE}
                           />
                         </div>
-                        <p
-                          style={{
-                            marginTop: '0.5rem',
-                            fontSize: '0.75rem',
-                            opacity: 0.8,
-                          }}
-                        >
-                          Size: {pattern.cols} × {pattern.rows}. Use these as row/column indices for
-                          assembly.
-                        </p>
                       </div>
 
                       <div

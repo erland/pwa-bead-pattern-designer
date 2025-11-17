@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';
+import { ShapePaletteSelector } from '../editor/ShapePaletteSelector';
 
 export interface NewPatternDialogProps {
   isOpen: boolean;
@@ -21,7 +22,6 @@ export function NewPatternDialog({
   const [shapeId, setShapeId] = useState<string>('');
   const [paletteId, setPaletteId] = useState<string>('');
 
-  // When the dialog opens, initialize with the first available shape/palette
   useEffect(() => {
     if (!isOpen) return;
 
@@ -32,9 +32,7 @@ export function NewPatternDialog({
     setPaletteId(firstPalette?.id ?? '');
   }, [isOpen, shapes, palettes]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   const handleConfirm = () => {
     if (!shapeId || !paletteId) return;
@@ -46,37 +44,14 @@ export function NewPatternDialog({
       <div className="new-pattern-dialog">
         <h2>Create New Pattern</h2>
 
-        <div className="new-pattern-dialog__field">
-          <label>
-            Shape:
-            <select
-              value={shapeId}
-              onChange={(e) => setShapeId(e.target.value)}
-            >
-              {Object.values(shapes).map((shape) => (
-                <option key={shape.id} value={shape.id}>
-                  {shape.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="new-pattern-dialog__field">
-          <label>
-            Palette:
-            <select
-              value={paletteId}
-              onChange={(e) => setPaletteId(e.target.value)}
-            >
-              {Object.values(palettes).map((palette) => (
-                <option key={palette.id} value={palette.id}>
-                  {palette.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <ShapePaletteSelector
+          shapeId={shapeId}
+          paletteId={paletteId}
+          shapes={shapes}
+          palettes={palettes}
+          onChangeShapeId={setShapeId}
+          onChangePaletteId={setPaletteId}
+        />
 
         <div className="new-pattern-dialog__actions">
           <button type="button" onClick={onCancel}>

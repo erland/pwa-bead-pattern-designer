@@ -1,6 +1,6 @@
-// src/editor/NewPatternPartDialog.tsx
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';
+import { ShapePaletteSelector } from './ShapePaletteSelector';
 
 export interface NewPatternPartDialogProps {
   isOpen: boolean;
@@ -32,37 +32,14 @@ export function NewPatternPartDialog({
       <div className="new-pattern-dialog">
         <h2>Create New Pattern for Part</h2>
 
-        <div className="new-pattern-dialog__field">
-          <label>
-            Shape:
-            <select
-              value={shapeId}
-              onChange={(e) => onChangeShapeId(e.target.value)}
-            >
-              {Object.values(shapes).map((shape) => (
-                <option key={shape.id} value={shape.id}>
-                  {shape.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="new-pattern-dialog__field">
-          <label>
-            Palette:
-            <select
-              value={paletteId}
-              onChange={(e) => onChangePaletteId(e.target.value)}
-            >
-              {Object.values(palettes).map((palette) => (
-                <option key={palette.id} value={palette.id}>
-                  {palette.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <ShapePaletteSelector
+          shapeId={shapeId}
+          paletteId={paletteId}
+          shapes={shapes}
+          palettes={palettes}
+          onChangeShapeId={onChangeShapeId}
+          onChangePaletteId={onChangePaletteId}
+        />
 
         <div className="new-pattern-dialog__actions">
           <button type="button" onClick={onCancel}>

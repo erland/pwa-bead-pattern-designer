@@ -1,5 +1,10 @@
 // src/editor/GroupPartsSidebar.tsx
-import type { BeadPattern, PatternGroup, PatternPart, DimensionGuide } from '../domain/patterns';
+import type {
+  BeadPattern,
+  PatternGroup,
+  PatternPart,
+  DimensionGuide,
+} from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';
 import type { EditorUiState } from '../domain/uiState';
@@ -24,14 +29,13 @@ export interface GroupPartsSidebarProps {
   selectedPartId: string | null;
   onSelectPart: (partId: string) => void;
 
-  newPartName: string;
-  onChangeNewPartName: (value: string) => void;
+  // no explicit form fields here anymore, just the trigger:
   onOpenNewPatternDialog: () => void;
 
   onRemovePart: (partId: string) => void;
   onRenamePart: (partId: string) => void;
   onMovePart: (partId: string, direction: 'up' | 'down') => void;
-  // NEW: dimension guides for this group
+
   dimensionGuides?: DimensionGuide[];
   onRemoveGuide?: (guideId: string) => void;
 }
@@ -43,8 +47,6 @@ export function GroupPartsSidebar({
   palettes,
   selectedPartId,
   onSelectPart,
-  newPartName,
-  onChangeNewPartName,
   onOpenNewPatternDialog,
   onRemovePart,
   onRenamePart,
@@ -60,8 +62,17 @@ export function GroupPartsSidebar({
         <div className="group-editor__section-header">
           <h2 className="group-editor__section-title">Parts</h2>
           <span className="group-editor__section-count">
-            {group.parts.length === 1 ? '1 part' : `${group.parts.length} parts`}
+            {group.parts.length === 1
+              ? '1 part'
+              : `${group.parts.length} parts`}
           </span>
+          <button
+            type="button"
+            className="group-editor__button group-editor__button--primary"
+            onClick={onOpenNewPatternDialog}
+          >
+            New
+          </button>
         </div>
 
         {!hasParts ? (
@@ -101,41 +112,17 @@ export function GroupPartsSidebar({
         )}
       </section>
 
-      <section className="group-editor__add-part">
-        <h2 className="group-editor__section-title">Add Part</h2>
-
-        <label className="group-editor__field">
-          <span className="group-editor__field-label">Part name</span>
-          <input
-            type="text"
-            value={newPartName}
-            onChange={(event) => onChangeNewPartName(event.target.value)}
-            placeholder="e.g. Front, Left wing"
-          />
-        </label>
-
-        <button
-          type="button"
-          className="group-editor__button group-editor__button--primary"
-          onClick={onOpenNewPatternDialog}
-        >
-          Create new pattern &amp; add
-        </button>
-      </section>
       {dimensionGuides && dimensionGuides.length > 0 && (
         <div className="group-parts-sidebar__section group-parts-sidebar__section--guides">
           <h3 className="group-parts-sidebar__section-title">Guides</h3>
           <ul className="group-parts-sidebar__guides-list">
             {dimensionGuides.map((guide) => (
-              <li
-                key={guide.id}
-                className="group-parts-sidebar__guide-item"
-              >
+              <li key={guide.id} className="group-parts-sidebar__guide-item">
                 <span className="group-parts-sidebar__guide-label">
                   {guide.label}{' '}
                   <span className="group-parts-sidebar__guide-meta">
-                    {guide.axis === 'horizontal' ? 'H' : 'V'} ·{' '}
-                    {guide.reference} · {guide.cells}
+                    {guide.axis === 'horizontal' ? 'H' : 'V'} · {guide.reference}{' '}
+                    · {guide.cells}
                   </span>
                 </span>
                 {onRemoveGuide && (

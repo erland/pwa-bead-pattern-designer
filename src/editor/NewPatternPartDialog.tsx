@@ -1,9 +1,12 @@
+// src/editor/NewPatternPartDialog.tsx
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';
 import { ShapePaletteSelector } from './ShapePaletteSelector';
 
 export interface NewPatternPartDialogProps {
   isOpen: boolean;
+  partName: string;
+  onChangePartName: (value: string) => void;
   shapeId: string;
   paletteId: string;
   shapes: Record<string, PegboardShape>;
@@ -16,6 +19,8 @@ export interface NewPatternPartDialogProps {
 
 export function NewPatternPartDialog({
   isOpen,
+  partName,
+  onChangePartName,
   shapeId,
   paletteId,
   shapes,
@@ -30,7 +35,19 @@ export function NewPatternPartDialog({
   return (
     <div className="new-pattern-dialog-backdrop">
       <div className="new-pattern-dialog">
-        <h2>Create New Pattern for Part</h2>
+        <h2>Create New Part</h2>
+
+        <div className="new-pattern-dialog__field">
+          <label>
+            Part name:
+            <input
+              type="text"
+              value={partName}
+              onChange={(e) => onChangePartName(e.target.value)}
+              placeholder="e.g. Front, Left wing"
+            />
+          </label>
+        </div>
 
         <ShapePaletteSelector
           shapeId={shapeId}

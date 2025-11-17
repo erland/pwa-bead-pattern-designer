@@ -270,11 +270,7 @@ export function PatternGroupPrintPage() {
                             palette={palette}
                             editorState={PRINT_EDITOR_STATE}
                           />
-                        </div>
-                        <p className="group-print__size-hint">
-                          Size: {pattern.cols} × {pattern.rows}. Use these as
-                          row/column indices for assembly.
-                        </p>
+                        </div>                  
                       </div>
 
                       <div className="group-print__legend-col">

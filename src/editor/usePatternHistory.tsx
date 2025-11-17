@@ -15,14 +15,15 @@ export function usePatternHistory(pattern: BeadPattern | null, patternId: string
   const store = useBeadStore();
   const [history, setHistory] = useState<HistoryState | null>(null);
 
-  // Reset when pattern changes (fixes the “copy from previous part” bug you saw)
+  // Reset when we switch to a *different* pattern id,
+  // but do NOT reset on every grid update.
   useEffect(() => {
     if (!pattern) {
       setHistory(null);
       return;
     }
     setHistory(createInitialHistory(cloneGrid(pattern.grid)));
-  }, [patternId, pattern]);
+  }, [patternId]); // <-- removed `pattern` here
 
   const getCurrentGrid = useCallback(
     (): BeadGrid => (history ? history.present : pattern?.grid ?? []),

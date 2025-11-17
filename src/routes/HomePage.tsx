@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useBeadStore } from '../store/beadStore';
 import {
-  useBeadStore,
-} from '../store/beadStore';
-import { getLastOpenedPatternId, setLastOpenedPatternId } from '../settings/appSettings';
+  getLastOpenedPatternId,
+  setLastOpenedPatternId,
+} from '../settings/appSettings';
 import { PatternCanvas } from '../editor/PatternCanvas';
 import type { EditorUiState } from '../domain/uiState';
+import { NewPatternDialog } from './NewPatternDialog';
+import { TemplateGroupDialog } from './TemplateGroupDialog';
 import './HomePage.css';
 
 const HOME_THUMBNAIL_EDITOR_STATE: EditorUiState = {
@@ -21,7 +24,6 @@ const HOME_THUMBNAIL_EDITOR_STATE: EditorUiState = {
 export function HomePage() {
   const navigate = useNavigate();
 
-  // Store selectors with stable references
   const patternsMap = useBeadStore((state) => state.patterns);
   const groupsMap = useBeadStore((state) => state.groups);
   const shapes = useBeadStore((state) => state.shapes);
@@ -30,23 +32,17 @@ export function HomePage() {
   const createGroup = useBeadStore((state) => state.createGroup);
   const deletePattern = useBeadStore((state) => state.deletePattern);
   const deleteGroup = useBeadStore((state) => state.deleteGroup);
-
   const createGroupFromTemplateGroup = useBeadStore(
     (state) => state.createGroupFromTemplateGroup,
   );
 
-  const templateGroups = Object.values(groupsMap).filter(
-    (g) => g.isTemplate,
-  );
+  const templateGroups = Object.values(groupsMap).filter((g) => g.isTemplate);
 
-  // Derived arrays
   const groups = Object.values(groupsMap);
-  // Only show patterns that are not embedded in a group
   const topLevelPatterns = Object.values(patternsMap).filter(
-    (p) => !p.belongsToGroupId
+    (p) => !p.belongsToGroupId,
   );
 
-  // Combined project cards: patterns + groups
   const projectCards = [
     ...topLevelPatterns.map((pattern) => ({
       type: 'pattern' as const,
@@ -58,25 +54,21 @@ export function HomePage() {
     })),
   ];
 
-  // "Last opened" pattern from settings + current store
   const lastOpenedId = getLastOpenedPatternId();
-  const lastOpenedPattern = lastOpenedId ? patternsMap[lastOpenedId] : undefined;
+  const lastOpenedPattern = lastOpenedId
+    ? patternsMap[lastOpenedId]
+    : undefined;
 
-  // --- New Pattern dialog state ---
+  // Dialog open/close state only
   const [isNewPatternDialogOpen, setIsNewPatternDialogOpen] = useState(false);
-  const [dialogShapeId, setDialogShapeId] = useState<string>('');
-  const [dialogPaletteId, setDialogPaletteId] = useState<string>('');
-
-  // --- Template picker dialog state ---
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
-  const [selectedTemplateGroupId, setSelectedTemplateGroupId] = useState<string | null>(null);
+
+  const openPattern = (id: string) => {
+    setLastOpenedPatternId(id);
+    navigate(`/editor/${id}`);
+  };
 
   const handleOpenNewPatternDialog = () => {
-    const firstShape = Object.values(shapes)[0];
-    const firstPalette = Object.values(palettes)[0];
-
-    setDialogShapeId(firstShape?.id ?? '');
-    setDialogPaletteId(firstPalette?.id ?? '');
     setIsNewPatternDialogOpen(true);
   };
 
@@ -84,18 +76,10 @@ export function HomePage() {
     setIsNewPatternDialogOpen(false);
   };
 
-  // Open a pattern and remember it as "last opened"
-  const openPattern = (id: string) => {
-    setLastOpenedPatternId(id);
-    navigate(`/editor/${id}`);
-  };
-
-  const handleConfirmNewPattern = () => {
-    const shape = dialogShapeId ? shapes[dialogShapeId] : undefined;
-    const palette = dialogPaletteId ? palettes[dialogPaletteId] : undefined;
-    if (!shape || !palette) {
-      return;
-    }
+  const handleCreatePatternFromDialog = (shapeId: string, paletteId: string) => {
+    const shape = shapes[shapeId];
+    const palette = palettes[paletteId];
+    if (!shape || !palette) return;
 
     const id = createPattern({
       name: 'New Pattern',
@@ -115,8 +99,6 @@ export function HomePage() {
   };
 
   const handleOpenTemplateDialog = () => {
-    const firstTemplate = templateGroups[0];
-    setSelectedTemplateGroupId((current) => current ?? firstTemplate?.id ?? null);
     setIsTemplateDialogOpen(true);
   };
 
@@ -124,21 +106,18 @@ export function HomePage() {
     setIsTemplateDialogOpen(false);
   };
 
-  const handleConfirmTemplateDialog = () => {
-    if (!selectedTemplateGroupId) return;
-    const newGroupId = createGroupFromTemplateGroup(selectedTemplateGroupId);
+  const handleCreateGroupFromTemplate = (templateGroupId: string) => {
+    const newGroupId = createGroupFromTemplateGroup(templateGroupId);
     setIsTemplateDialogOpen(false);
     navigate(`/group/${newGroupId}`);
   };
 
-  // Delete a pattern (top-level only)
   const handleDeletePattern = (id: string, name: string) => {
     const confirmed = window.confirm(
-      `Delete pattern "${name}"?\n\nThis cannot be undone.`
+      `Delete pattern "${name}"?\n\nThis cannot be undone.`,
     );
     if (!confirmed) return;
 
-    // If this was the "last opened" pattern, clear it
     if (lastOpenedId === id) {
       setLastOpenedPatternId(null);
     }
@@ -146,22 +125,19 @@ export function HomePage() {
     deletePattern(id);
   };
 
-  // Delete a pattern group
   const handleDeleteGroup = (id: string, name: string) => {
     const confirmed = window.confirm(
-      `Delete pattern group "${name}"?\n\nThis will also delete any patterns that belong only to this group.`
+      `Delete pattern group "${name}"?\n\nThis will also delete any patterns that belong only to this group.`,
     );
     if (!confirmed) return;
 
     deleteGroup(id);
   };
 
-  // Open print / export view for a single pattern
   const handleOpenPrintPattern = (id: string) => {
     navigate(`/print/${id}`);
   };
 
-  // Open print / export view for a pattern group
   const handleOpenPrintGroup = (id: string) => {
     navigate(`/print-group/${id}`);
   };
@@ -183,7 +159,6 @@ export function HomePage() {
       </header>
 
       <section className="home-section">
-        {/* "Open last" still refers to last opened *pattern* */}
         {lastOpenedPattern && (
           <div className="home-last-opened">
             <button
@@ -225,9 +200,7 @@ export function HomePage() {
                           />
                         </div>
                       )}
-                      <div className="pattern-card__title">
-                        {p.name}
-                      </div>
+                      <div className="pattern-card__title">{p.name}</div>
                     </button>
 
                     <div className="pattern-card__actions">
@@ -256,12 +229,15 @@ export function HomePage() {
                 );
               }
 
-              // Group card
               const g = card.group;
               const firstPart = g.parts[0];
-              const pattern = firstPart ? patternsMap[firstPart.patternId] : undefined;
+              const pattern = firstPart
+                ? patternsMap[firstPart.patternId]
+                : undefined;
               const shape = pattern ? shapes[pattern.shapeId] : undefined;
-              const palette = pattern ? palettes[pattern.paletteId] : undefined;
+              const palette = pattern
+                ? palettes[pattern.paletteId]
+                : undefined;
 
               const handleOpenGroup = () => navigate(`/group/${g.id}`);
 
@@ -282,9 +258,7 @@ export function HomePage() {
                         />
                       </div>
                     )}
-                    <div className="pattern-card__title">
-                      {g.name}
-                    </div>
+                    <div className="pattern-card__title">{g.name}</div>
                   </button>
 
                   <div className="pattern-card__actions">
@@ -316,109 +290,21 @@ export function HomePage() {
         )}
       </section>
 
-      {/* Simple inline "dialog" for New Pattern */}
-      {isNewPatternDialogOpen && (
-        <div className="new-pattern-dialog-backdrop">
-          <div className="new-pattern-dialog">
-            <h2>Create New Pattern</h2>
-            <div className="new-pattern-dialog__field">
-              <label>
-                Shape:
-                <select
-                  value={dialogShapeId}
-                  onChange={(e) => setDialogShapeId(e.target.value)}
-                >
-                  {Object.values(shapes).map((shape) => (
-                    <option key={shape.id} value={shape.id}>
-                      {shape.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="new-pattern-dialog__field">
-              <label>
-                Palette:
-                <select
-                  value={dialogPaletteId}
-                  onChange={(e) => setDialogPaletteId(e.target.value)}
-                >
-                  {Object.values(palettes).map((palette) => (
-                    <option key={palette.id} value={palette.id}>
-                      {palette.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+      <NewPatternDialog
+        isOpen={isNewPatternDialogOpen}
+        shapes={shapes}
+        palettes={palettes}
+        onCancel={handleCancelNewPattern}
+        onCreate={handleCreatePatternFromDialog}
+      />
 
-            <div className="new-pattern-dialog__actions">
-              <button type="button" onClick={handleCancelNewPattern}>
-                Cancel
-              </button>
-              <button type="button" onClick={handleConfirmNewPattern}>
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Template picker dialog */}
-      {isTemplateDialogOpen && (
-        <div className="new-pattern-dialog-backdrop">
-          <div className="new-pattern-dialog">
-            <h2>Create Group from Template</h2>
-
-            {templateGroups.length === 0 ? (
-              <p>No templates defined yet. Mark a group as template in the editor to use it here.</p>
-            ) : (
-              <>
-                <div className="new-pattern-dialog__field">
-                  <label>
-                    Template:
-                    <select
-                      value={selectedTemplateGroupId ?? ''}
-                      onChange={(e) =>
-                        setSelectedTemplateGroupId(e.target.value || null)
-                      }
-                    >
-                      {templateGroups.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                {selectedTemplateGroupId && (
-                  <div className="new-pattern-dialog__field home-template-dialog__description">
-                    <p>
-                      <strong>Parts:</strong>{' '}
-                      {groupsMap[selectedTemplateGroupId]?.parts
-                        .map((p) => p.name)
-                        .join(', ')}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
-
-            <div className="new-pattern-dialog__actions">
-              <button type="button" onClick={handleCancelTemplateDialog}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmTemplateDialog}
-                disabled={!selectedTemplateGroupId}
-              >
-                Create Group
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <TemplateGroupDialog
+        isOpen={isTemplateDialogOpen}
+        templateGroups={templateGroups}
+        groupsById={groupsMap}
+        onCancel={handleCancelTemplateDialog}
+        onCreateFromTemplate={handleCreateGroupFromTemplate}
+      />
     </div>
   );
 }

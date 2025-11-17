@@ -1,9 +1,10 @@
 // src/store/beadStore.ts
 import { create } from 'zustand';
-import type { BeadPalette, BeadColor } from '../domain/colors';
-import { DEFAULT_SHAPES, type PegboardShape, createRectangleShape } from '../domain/shapes';
+import type { BeadPalette } from '../domain/colors';
+import type { PegboardShape } from '../domain/shapes';
 import type { BeadPattern, PatternGroup, PatternPart, DimensionGuide } from '../domain/patterns';
 import { createEmptyGrid } from '../domain/patterns';
+import { createSeedData } from './seedData';
 
 type BeadStoreData = {
   patterns: Record<string, BeadPattern>;
@@ -67,83 +68,9 @@ function createId(prefix: string): string {
 // Seed data
 // ─────────────────────────────────────────────────────────────────────────────
 
-function createSeedPalette(): BeadPalette {
-  const paletteId = 'palette-basic';
-  const colors: BeadColor[] = [
-    { id: 'c-white', name: 'White', paletteId, rgb: { r: 255, g: 255, b: 255 } },
-    { id: 'c-black', name: 'Black', paletteId, rgb: { r: 0, g: 0, b: 0 } },
-    { id: 'c-red', name: 'Red', paletteId, rgb: { r: 230, g: 57, b: 70 } },
-    { id: 'c-green', name: 'Green', paletteId, rgb: { r: 42, g: 157, b: 143 } },
-    { id: 'c-blue', name: 'Blue', paletteId, rgb: { r: 38, g: 70, b: 83 } },
-    { id: 'c-yellow', name: 'Yellow', paletteId, rgb: { r: 244, g: 208, b: 63 } },
-  ];
-
-  return {
-    id: paletteId,
-    name: 'Basic Demo Palette',
-    brand: 'Demo',
-    colors,
-  };
-}
-
-function createSeedShapes(): Record<string, PegboardShape> {
-  // Keep a small 16×16 square for quick tests / tiny patterns
-  const baseShapes: PegboardShape[] = [
-    createRectangleShape('shape-square-16', 'Square 16×16', 16, 16),
-    // And then all the default 29×29 shapes (square, circle, heart, …)
-    ...DEFAULT_SHAPES,
-  ];
-
-  const map: Record<string, PegboardShape> = {};
-  for (const s of baseShapes) {
-    map[s.id] = s;
-  }
-  return map;
-}
-
-function createSeedData(): BeadStoreData {
-  const palette = createSeedPalette();
-  const shapes = createSeedShapes();
-
-  const defaultShape = shapes['shape-square-16'];
-
-  const patternId = 'pattern-demo-house-front';
-  const now = new Date().toISOString();
-
-  const pattern: BeadPattern = {
-    id: patternId,
-    name: 'Demo Pattern',
-    shapeId: defaultShape.id,
-    cols: defaultShape.cols,
-    rows: defaultShape.rows,
-    paletteId: palette.id,
-    grid: createEmptyGrid(defaultShape.cols, defaultShape.rows),
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const groupId = 'group-demo-house';
-  const part: PatternPart = {
-    id: 'part-front-wall',
-    name: 'Front Wall',
-    patternId,
-  };
-
-  const group: PatternGroup = {
-    id: groupId,
-    name: 'Demo 3D House',
-    parts: [part],
-  };
-
-  return {
-    palettes: { [palette.id]: palette },
-    shapes,
-    patterns: { [pattern.id]: pattern },
-    groups: { [group.id]: group },
-  };
-}
-
 function createInitialData(): BeadStoreData {
+  // `SeedData` and `BeadStoreData` have the same shape,
+  // so this is structurally compatible.
   return createSeedData();
 }
 

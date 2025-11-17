@@ -7,7 +7,7 @@ export interface TemplateGroupDialogProps {
   templateGroups: PatternGroup[];
   groupsById: Record<string, PatternGroup>;
   onCancel: () => void;
-  onCreateFromTemplate: (templateGroupId: string) => void;
+  onCreateFromTemplate: (name: string, templateGroupId: string) => void;
 }
 
 export function TemplateGroupDialog({
@@ -17,17 +17,23 @@ export function TemplateGroupDialog({
   onCancel,
   onCreateFromTemplate,
 }: TemplateGroupDialogProps) {
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null,
+  );
+  const [name, setName] = useState<string>('');
 
-  // When dialog opens, ensure we have some selection
+  // When dialog opens, pick first template and default name from it
   useEffect(() => {
     if (!isOpen) return;
+
     if (templateGroups.length === 0) {
       setSelectedTemplateId(null);
+      setName('');
       return;
     }
 
-    setSelectedTemplateId((current) => current ?? templateGroups[0]?.id ?? null);
+    const first = templateGroups[0];
+    setSelectedTemplateId(first.id);
   }, [isOpen, templateGroups]);
 
   if (!isOpen) {
@@ -37,28 +43,61 @@ export function TemplateGroupDialog({
   const selectedTemplate =
     selectedTemplateId != null ? groupsById[selectedTemplateId] : undefined;
 
+  const handleTemplateChange = (value: string) => {
+    const id = value || null;
+    setSelectedTemplateId(id);
+
+    if (id) {
+      const template = groupsById[id];
+      // Default name to the selected template's name
+      setName(template?.name ?? '');
+    } else {
+      setName('');
+    }
+  };
+
   const handleConfirm = () => {
     if (!selectedTemplateId) return;
-    onCreateFromTemplate(selectedTemplateId);
+
+    const fallbackName =
+      selectedTemplate?.name ?? 'New Pattern Group from Template';
+    const finalName = name.trim() || fallbackName;
+
+    onCreateFromTemplate(finalName, selectedTemplateId);
   };
+
+  const hasTemplates = templateGroups.length > 0;
 
   return (
     <div className="new-pattern-dialog-backdrop">
       <div className="new-pattern-dialog">
         <h2>Create Group from Template</h2>
 
-        {templateGroups.length === 0 ? (
-          <p>No templates defined yet. Mark a group as template in the editor to use it here.</p>
+        {!hasTemplates ? (
+          <p>
+            No templates defined yet. Mark a group as template in the editor to
+            use it here.
+          </p>
         ) : (
           <>
+            <div className="new-pattern-dialog__field">
+              <label>
+                Group name:
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Spaceship, Dragon, House"
+                />
+              </label>
+            </div>
+
             <div className="new-pattern-dialog__field">
               <label>
                 Template:
                 <select
                   value={selectedTemplateId ?? ''}
-                  onChange={(e) =>
-                    setSelectedTemplateId(e.target.value || null)
-                  }
+                  onChange={(e) => handleTemplateChange(e.target.value)}
                 >
                   {templateGroups.map((g) => (
                     <option key={g.id} value={g.id}>
@@ -87,7 +126,7 @@ export function TemplateGroupDialog({
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={!selectedTemplateId}
+            disabled={!hasTemplates || !selectedTemplateId}
           >
             Create Group
           </button>

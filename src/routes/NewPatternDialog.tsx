@@ -9,7 +9,7 @@ export interface NewPatternDialogProps {
   shapes: Record<string, PegboardShape>;
   palettes: Record<string, BeadPalette>;
   onCancel: () => void;
-  onCreate: (shapeId: string, paletteId: string) => void;
+  onCreate: (name: string, shapeId: string, paletteId: string) => void;
 }
 
 export function NewPatternDialog({
@@ -19,6 +19,7 @@ export function NewPatternDialog({
   onCancel,
   onCreate,
 }: NewPatternDialogProps) {
+  const [name, setName] = useState<string>('');
   const [shapeId, setShapeId] = useState<string>('');
   const [paletteId, setPaletteId] = useState<string>('');
 
@@ -28,6 +29,7 @@ export function NewPatternDialog({
     const firstShape = Object.values(shapes)[0];
     const firstPalette = Object.values(palettes)[0];
 
+    setName('');
     setShapeId(firstShape?.id ?? '');
     setPaletteId(firstPalette?.id ?? '');
   }, [isOpen, shapes, palettes]);
@@ -36,13 +38,27 @@ export function NewPatternDialog({
 
   const handleConfirm = () => {
     if (!shapeId || !paletteId) return;
-    onCreate(shapeId, paletteId);
+
+    const finalName = name.trim() || 'New Pattern';
+    onCreate(finalName, shapeId, paletteId);
   };
 
   return (
     <div className="new-pattern-dialog-backdrop">
       <div className="new-pattern-dialog">
         <h2>Create New Pattern</h2>
+
+        <div className="new-pattern-dialog__field">
+          <label>
+            Pattern name:
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Space Invader, Heart"
+            />
+          </label>
+        </div>
 
         <ShapePaletteSelector
           shapeId={shapeId}

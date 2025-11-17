@@ -9,6 +9,7 @@ import { PatternCanvas } from '../editor/PatternCanvas';
 import type { EditorUiState } from '../domain/uiState';
 import { NewPatternDialog } from './NewPatternDialog';
 import { TemplateGroupDialog } from './TemplateGroupDialog';
+import { NewGroupDialog } from './NewGroupDialog';
 import './HomePage.css';
 
 const HOME_THUMBNAIL_EDITOR_STATE: EditorUiState = {
@@ -32,6 +33,7 @@ export function HomePage() {
   const createGroup = useBeadStore((state) => state.createGroup);
   const deletePattern = useBeadStore((state) => state.deletePattern);
   const deleteGroup = useBeadStore((state) => state.deleteGroup);
+  const updateGroup = useBeadStore((state) => state.updateGroup);
   const createGroupFromTemplateGroup = useBeadStore(
     (state) => state.createGroupFromTemplateGroup,
   );
@@ -61,6 +63,7 @@ export function HomePage() {
 
   // Dialog open/close state only
   const [isNewPatternDialogOpen, setIsNewPatternDialogOpen] = useState(false);
+  const [isNewGroupDialogOpen, setIsNewGroupDialogOpen] = useState(false);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
 
   const openPattern = (id: string) => {
@@ -76,13 +79,17 @@ export function HomePage() {
     setIsNewPatternDialogOpen(false);
   };
 
-  const handleCreatePatternFromDialog = (shapeId: string, paletteId: string) => {
+  const handleCreatePatternFromDialog = (
+    name: string,
+    shapeId: string,
+    paletteId: string,
+  ) => {
     const shape = shapes[shapeId];
     const palette = palettes[paletteId];
     if (!shape || !palette) return;
 
     const id = createPattern({
-      name: 'New Pattern',
+      name,
       shapeId: shape.id,
       cols: shape.cols,
       rows: shape.rows,
@@ -93,10 +100,23 @@ export function HomePage() {
     openPattern(id);
   };
 
-  const handleNewGroup = () => {
-    const id = createGroup('New Pattern Group');
+  // ── New group dialog handlers ─────────────────────────────
+
+  const handleOpenNewGroupDialog = () => {
+    setIsNewGroupDialogOpen(true);
+  };
+
+  const handleCancelNewGroup = () => {
+    setIsNewGroupDialogOpen(false);
+  };
+
+  const handleCreateGroupFromDialog = (name: string) => {
+    const id = createGroup(name);
+    setIsNewGroupDialogOpen(false);
     navigate(`/group/${id}`);
   };
+
+  // ── Template dialog handlers ──────────────────────────────
 
   const handleOpenTemplateDialog = () => {
     setIsTemplateDialogOpen(true);
@@ -106,8 +126,13 @@ export function HomePage() {
     setIsTemplateDialogOpen(false);
   };
 
-  const handleCreateGroupFromTemplate = (templateGroupId: string) => {
+  const handleCreateGroupFromTemplate = (
+    name: string,
+    templateGroupId: string,
+  ) => {
     const newGroupId = createGroupFromTemplateGroup(templateGroupId);
+    // Override the default name with the user-provided one
+    updateGroup(newGroupId, { name });
     setIsTemplateDialogOpen(false);
     navigate(`/group/${newGroupId}`);
   };
@@ -149,7 +174,7 @@ export function HomePage() {
           <button type="button" onClick={handleOpenNewPatternDialog}>
             New Pattern
           </button>
-          <button type="button" onClick={handleNewGroup}>
+          <button type="button" onClick={handleOpenNewGroupDialog}>
             New Pattern Group
           </button>
           <button type="button" onClick={handleOpenTemplateDialog}>
@@ -296,6 +321,12 @@ export function HomePage() {
         palettes={palettes}
         onCancel={handleCancelNewPattern}
         onCreate={handleCreatePatternFromDialog}
+      />
+
+      <NewGroupDialog
+        isOpen={isNewGroupDialogOpen}
+        onCancel={handleCancelNewGroup}
+        onCreate={handleCreateGroupFromDialog}
       />
 
       <TemplateGroupDialog

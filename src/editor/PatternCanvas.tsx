@@ -151,19 +151,38 @@ function drawPattern(
       ctx.fillRect(cx, cy, cellSize, cellSize);
 
       if (color) {
-        const radius = (cellSize * 0.8) / 2;
         const centerX = cx + cellSize / 2;
         const centerY = cy + cellSize / 2;
-
+      
+        // Outer radius = 80% of cell, like before
+        const outerRadius = (cellSize * 0.8) / 2;
+        // Inner radius = hole in the bead (tweak 0.45–0.6 to taste)
+        const innerRadius = outerRadius * 0.50;
+      
         const { r, g, b } = color.rgb;
+      
+        // --- Outer colored disc ---
         ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
         ctx.closePath();
         ctx.fill();
-
-        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-        ctx.lineWidth = 1;
+      
+        // Optional outer edge for a bit of definition
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+        ctx.lineWidth = Math.max(1, cellSize * 0.04);
+        ctx.stroke();
+      
+        // --- Inner hole (same as cell background, currently white) ---
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+      
+        // Tiny inner shadow for “depth”
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.lineWidth = Math.max(0.5, cellSize * 0.03);
         ctx.stroke();
       }
     }

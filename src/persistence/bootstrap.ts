@@ -20,7 +20,7 @@ export async function initializeBeadStoreFromStorage(): Promise<void> {
     ...state,
     patterns: snapshot.patterns,
     groups: snapshot.groups,
-    palettes: snapshot.palettes,
+    //palettes: snapshot.palettes,
     shapes: snapshot.shapes,
   }));
 }

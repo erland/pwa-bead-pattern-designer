@@ -273,6 +273,8 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
 
         <NewPatternPartDialog
           isOpen={isNewPartDialogOpen}
+          partName={newPartName}                    // 🔹 add this
+          onChangePartName={setNewPartName} 
           shapeId={dialogShapeId}
           paletteId={dialogPaletteId}
           shapes={shapes}

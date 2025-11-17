@@ -1,3 +1,4 @@
+// src/routes/PatternGroupPrintPage.tsx
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
@@ -17,7 +18,7 @@ const PRINT_EDITOR_STATE: EditorUiState = {
   outlinesVisible: true,
 };
 
-type LayoutMode = 'one-per-page' | 'two-per-page' | 'grid';
+type LayoutMode = 'one-per-page' | 'two-per-page';
 
 export function PatternGroupPrintPage() {
   const { groupId } = useParams();
@@ -106,56 +107,23 @@ export function PatternGroupPrintPage() {
     URL.revokeObjectURL(url);
   };
 
-  const containerStyle: React.CSSProperties =
-    layout === 'one-per-page'
-      ? {
-          display: 'block',
-        }
-      : {
-          display: 'grid',
-          gridTemplateColumns:
-            layout === 'two-per-page' ? '1fr 1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '1.5rem',
-        };
+  const containerStyle: React.CSSProperties = {
+    display: 'block',
+  };
 
   const partsToRender = visibleParts.length > 0 ? visibleParts : group.parts;
 
   return (
-    <div
-      className="group-print"
-      style={{
-        padding: '1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-      }}
-    >
-      <header
-        className="group-print__header"
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '0.75rem',
-        }}
-      >
+    <div className={`group-print group-print--layout-${layout}`}>
+      <header className="group-print__header">
         <div>
           {/* Main caption = group name */}
-          <h1 className="group-print__title" style={{ margin: 0 }}>
-            {group.name}
-          </h1>
-          <p
-            className="group-print__subtitle"
-            style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', opacity: 0.8 }}
-          >
+          <h1 className="group-print__title">{group.name}</h1>
+          <p className="group-print__subtitle">
             {group.parts.length} part{group.parts.length === 1 ? '' : 's'}
           </p>
         </div>
-        <div
-          className="group-print__actions"
-          style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}
-        >
+        <div className="group-print__actions">
           <button type="button" onClick={handlePrint}>
             Print
           </button>
@@ -165,31 +133,16 @@ export function PatternGroupPrintPage() {
         </div>
       </header>
 
-      <section
-        className="group-print__body"
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '1.5rem',
-          alignItems: 'flex-start',
-        }}
-      >
+      <section className="group-print__body">
         {/* Left: selection + layout controls (screen only, hidden in print) */}
-        <div
-          className="group-print__sidebar"
-          style={{
-            minWidth: '220px',
-            maxWidth: '320px',
-            flex: '0 0 auto',
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Parts to include</h2>
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0, fontSize: '0.9rem' }}>
+        <div className="group-print__sidebar">
+          <h2>Parts to include</h2>
+          <ul className="group-print__parts-list">
             {group.parts.map((part) => {
               const pattern = patterns[part.patternId];
               return (
-                <li key={part.id} style={{ marginBottom: '0.35rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <li key={part.id} className="group-print__parts-list-item">
+                  <label className="group-print__parts-list-label">
                     <input
                       type="checkbox"
                       checked={selectedPartIds.has(part.id)}
@@ -198,7 +151,7 @@ export function PatternGroupPrintPage() {
                     <span>
                       <strong>{part.name}</strong>
                       {pattern && (
-                        <span style={{ marginLeft: '0.25rem', opacity: 0.7, fontSize: '0.8rem' }}>
+                        <span className="group-print__parts-list-meta">
                           ({pattern.cols} × {pattern.rows})
                         </span>
                       )}
@@ -209,11 +162,9 @@ export function PatternGroupPrintPage() {
             })}
           </ul>
 
-          <div style={{ marginTop: '1rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '0.9rem' }}>Layout</h3>
-            <label
-              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}
-            >
+          <div className="group-print__layout-controls">
+            <h3>Layout</h3>
+            <label className="group-print__layout-option">
               <input
                 type="radio"
                 name="layout"
@@ -223,9 +174,7 @@ export function PatternGroupPrintPage() {
               />
               One part per page
             </label>
-            <label
-              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}
-            >
+            <label className="group-print__layout-option">
               <input
                 type="radio"
                 name="layout"
@@ -235,30 +184,19 @@ export function PatternGroupPrintPage() {
               />
               Two parts per row
             </label>
-            <label
-              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}
-            >
-              <input
-                type="radio"
-                name="layout"
-                value="grid"
-                checked={layout === 'grid'}
-                onChange={() => setLayout('grid')}
-              />
-              Grid layout
-            </label>
           </div>
 
-          <p style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.75 }}>
-            Note: Actual page breaks depend on your printer settings. &quot;One part per page&quot; adds
-            page breaks between parts to help keep them separated when printing.
+          <p className="group-print__layout-hint">
+            Note: Actual page breaks depend on your printer settings. &quot;One
+            part per page&quot; adds page breaks between parts to help keep
+            them separated when printing.
           </p>
         </div>
 
         {/* Right: rendered parts */}
-        <div className="group-print__content" style={{ flex: '1 1 0%' }}>
+        <div className="group-print__content">
           {partsToRender.length === 0 ? (
-            <p style={{ fontSize: '0.9rem' }}>
+            <p className="group-print__empty-message">
               Select at least one part to include in the printout.
             </p>
           ) : (
@@ -276,18 +214,25 @@ export function PatternGroupPrintPage() {
 
                 const beadLegend = (() => {
                   const counts = computeBeadCounts(pattern);
-                  const entries: { color: BeadColor | undefined; colorId: string; count: number }[] =
-                    [];
+                  const entries: {
+                    color: BeadColor | undefined;
+                    colorId: string;
+                    count: number;
+                  }[] = [];
                   Object.entries(counts).forEach(([colorId, count]) => {
                     const color = palette.colors.find((c) => c.id === colorId);
                     entries.push({ color, colorId, count });
                   });
                   entries.sort((a, b) => {
                     const ia = a.color
-                      ? palette.colors.findIndex((c) => c.id === a.color!.id)
+                      ? palette.colors.findIndex(
+                          (c) => c.id === a.color!.id,
+                        )
                       : Number.MAX_SAFE_INTEGER;
                     const ib = b.color
-                      ? palette.colors.findIndex((c) => c.id === b.color!.id)
+                      ? palette.colors.findIndex(
+                          (c) => c.id === b.color!.id,
+                        )
                       : Number.MAX_SAFE_INTEGER;
                     if (ia !== ib) return ia - ib;
                     return a.colorId.localeCompare(b.colorId);
@@ -298,7 +243,6 @@ export function PatternGroupPrintPage() {
                 const wrapperStyle: React.CSSProperties =
                   layout === 'one-per-page'
                     ? {
-                        pageBreakAfter: index === partsToRender.length - 1 ? 'auto' : 'always',
                         marginBottom: '2rem',
                       }
                     : {
@@ -309,56 +253,17 @@ export function PatternGroupPrintPage() {
                   <section
                     key={part.id}
                     className="group-print__part-section"
-                    style={{
-                      ...wrapperStyle,
-                      border: '1px solid rgba(148, 163, 184, 0.4)',
-                      borderRadius: '0.5rem',
-                      padding: '0.75rem',
-                      background: 'var(--color-surface, #020617)',
-                    }}
+                    style={wrapperStyle}
                   >
-                    <h2 style={{ marginTop: 0, marginBottom: '0.25rem', fontSize: '1rem' }}>
-                      {part.name}
-                    </h2>
-                    <p
-                      style={{
-                        marginTop: 0,
-                        marginBottom: '0.5rem',
-                        fontSize: '0.8rem',
-                        opacity: 0.8,
-                      }}
-                    >
-                      {/* No "Pattern:" prefix here */}
+                    <h2 className="group-print__part-title">{part.name}</h2>
+                    <p className="group-print__part-subtitle">
                       {pattern.cols} × {pattern.rows} &middot; Palette:{' '}
                       {palette.name}
                     </p>
 
-                    <div
-                      className="group-print__part-layout"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        gap: '1rem',
-                        alignItems: 'flex-start',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <div
-                        className="group-print__pattern-col"
-                        style={{
-                          flex: '2 1 240px',
-                          minWidth: '220px',
-                        }}
-                      >
-                        <div
-                          className="group-print__canvas-wrapper"
-                          style={{
-                            border: '1px solid rgba(148,163,184,0.4)',
-                            borderRadius: '0.5rem',
-                            padding: '0.5rem',
-                            background: 'var(--color-surface, #020617)',
-                          }}
-                        >
+                    <div className="group-print__part-layout">
+                      <div className="group-print__pattern-col">
+                        <div className="group-print__canvas-wrapper">
                           <PatternCanvas
                             pattern={pattern}
                             shape={shape}
@@ -366,46 +271,35 @@ export function PatternGroupPrintPage() {
                             editorState={PRINT_EDITOR_STATE}
                           />
                         </div>
+                        <p className="group-print__size-hint">
+                          Size: {pattern.cols} × {pattern.rows}. Use these as
+                          row/column indices for assembly.
+                        </p>
                       </div>
 
-                      <div
-                        className="group-print__legend-col"
-                        style={{
-                          flex: '1 1 200px',
-                          minWidth: '200px',
-                        }}
-                      >
-                        <h3
-                          className="group-print__legend-title"
-                          style={{
-                            marginTop: 0,
-                            marginBottom: '0.25rem',
-                            fontSize: '0.9rem',
-                          }}
-                        >
+                      <div className="group-print__legend-col">
+                        <h3 className="group-print__legend-title">
                           Bead Legend
                         </h3>
                         {beadLegend.length === 0 ? (
-                          <p style={{ fontSize: '0.8rem' }}>No beads placed yet.</p>
+                          <p className="group-print__legend-empty">
+                            No beads placed yet.
+                          </p>
                         ) : (
-                          <table
-                            style={{
-                              width: '100%',
-                              borderCollapse: 'collapse',
-                              fontSize: '0.75rem',
-                            }}
-                          >
+                          <table className="group-print__legend-table">
                             <thead>
                               <tr>
-                                <th style={{ textAlign: 'left', padding: '0.25rem' }}>Color</th>
-                                <th style={{ textAlign: 'left', padding: '0.25rem' }}>Name</th>
-                                <th style={{ textAlign: 'right', padding: '0.25rem' }}>Count</th>
+                                <th>Color</th>
+                                <th>Name</th>
+                                <th className="group-print__legend-count-header">
+                                  Count
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
                               {beadLegend.map(({ color, colorId, count }) => (
                                 <tr key={colorId}>
-                                  <td style={{ padding: '0.25rem' }}>
+                                  <td>
                                     <svg
                                       className="group-print__legend-swatch"
                                       viewBox="0 0 20 20"
@@ -425,11 +319,15 @@ export function PatternGroupPrintPage() {
                                       />
                                     </svg>
                                   </td>
-                                  <td style={{ padding: '0.25rem' }}>
+                                  <td>
                                     {color?.name ?? '(Unknown color)'}
-                                    <div style={{ fontSize: '0.65rem', opacity: 0.7 }}>{colorId}</div>
+                                    <div className="group-print__legend-color-id">
+                                      {colorId}
+                                    </div>
                                   </td>
-                                  <td style={{ padding: '0.25rem', textAlign: 'right' }}>{count}</td>
+                                  <td className="group-print__legend-count-cell">
+                                    {count}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>

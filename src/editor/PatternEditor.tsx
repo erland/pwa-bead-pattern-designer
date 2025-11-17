@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useBeadStore } from '../store/beadStore';
 import { isCellInShape } from '../domain/shapes';
+import type { DimensionGuide } from '../domain/patterns';
 import type { EditorUiState } from '../domain/uiState';
 import { PatternCanvas } from './PatternCanvas';
 import {
@@ -19,6 +20,10 @@ import { PatternEditorHeader } from './PatternEditorHeader';
 import { PatternEditorSidebar } from './PatternEditorSidebar';
 import '../routes/PatternEditorPage.css';
 
+function createGuideId(): string {
+  return `guide_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export type PatternEditorProps = {
   patternId: string;
   /** When true, this pattern is remembered as "last opened" in app settings. */
@@ -29,6 +34,12 @@ export type PatternEditorProps = {
   onRenameTitle?: (newTitle: string) => void;
   /** Optional callback used in group editor to jump back to the parts list / top. */
   onBackToParts?: () => void;
+  /** If provided, pattern is being edited as part of this group (for guides). */
+  groupIdForGuides?: string;
+  /** Optional group-level dimension guides (for group editing). */
+  dimensionGuides?: DimensionGuide[];
+  /** Allow caller to hide guides even if provided. */
+  showGuidesOnCanvas?: boolean;
 };
 
 /**
@@ -41,6 +52,9 @@ export function PatternEditor({
   titleOverride,
   onRenameTitle,
   onBackToParts,
+  groupIdForGuides,
+  dimensionGuides,
+  showGuidesOnCanvas = true,
 }: PatternEditorProps) {
   const store = useBeadStore();
 
@@ -86,6 +100,82 @@ export function PatternEditor({
     nudgeSelectionRight,
     setClipboard,
   } = useSelectionTools(getCurrentGrid, applyHistoryChange);
+
+  // ─────────────────────────────────────────────────────────────
+  // Dimension guides: create from current selection (group editor)
+  // ─────────────────────────────────────────────────────────────
+
+    // ─────────────────────────────────────────────────────────────
+  // Dimension guides: create from current selection (group editor)
+  // ─────────────────────────────────────────────────────────────
+
+  const handleCreateHeightGuideFromSelection = () => {
+    if (!groupIdForGuides) return;
+    if (!selectionRect || !pattern) return;
+
+    const rows = pattern.rows;
+
+    // Selection covers rows [y, y + height - 1]
+    // Top edge line index:
+    const topLine = selectionRect.y; // 0..rows
+    // Bottom edge line index (after the last row in the selection):
+    const bottomLine = selectionRect.y + selectionRect.height; // 0..rows
+
+    const topGuide: DimensionGuide = {
+      id: createGuideId(),
+      label: 'Top',
+      axis: 'horizontal',
+      reference: 'top',
+      // line index from top
+      cells: topLine,
+    };
+
+    const bottomGuide: DimensionGuide = {
+      id: createGuideId(),
+      label: 'Bottom',
+      axis: 'horizontal',
+      reference: 'bottom',
+      // line index from bottom: rows - bottomLine
+      cells: rows - bottomLine,
+    };
+
+    const { addDimensionGuide } = store;
+    addDimensionGuide(groupIdForGuides, topGuide);
+    addDimensionGuide(groupIdForGuides, bottomGuide);
+  };
+
+  const handleCreateWidthGuideFromSelection = () => {
+    if (!groupIdForGuides) return;
+    if (!selectionRect || !pattern) return;
+
+    const cols = pattern.cols;
+
+    // Selection covers cols [x, x + width - 1]
+    const leftLine = selectionRect.x; // left edge line index: 0..cols
+    const rightLine = selectionRect.x + selectionRect.width; // right edge line index: 0..cols
+
+    const leftGuide: DimensionGuide = {
+      id: createGuideId(),
+      label: 'Left',
+      axis: 'vertical',
+      reference: 'left',
+      // line index from left
+      cells: leftLine,
+    };
+
+    const rightGuide: DimensionGuide = {
+      id: createGuideId(),
+      label: 'Right',
+      axis: 'vertical',
+      reference: 'right',
+      // line index from right: cols - rightLine
+      cells: cols - rightLine,
+    };
+
+    const { addDimensionGuide } = store;
+    addDimensionGuide(groupIdForGuides, leftGuide);
+    addDimensionGuide(groupIdForGuides, rightGuide);
+  };
 
   // Effective title shown in the header
   const effectiveTitle = titleOverride ?? pattern?.name ?? 'Pattern';
@@ -294,6 +384,8 @@ export function PatternEditor({
             onCellPointerDown={handleCellPointerDown}
             onCellPointerMove={handleCellPointerMove}
             selectionRect={selectionRect}
+            groupGuides={showGuidesOnCanvas ? dimensionGuides : undefined}
+            showGuides={showGuidesOnCanvas}
           />
         </div>
 
@@ -316,6 +408,12 @@ export function PatternEditor({
           onPasteSelection={pasteSelection}
           onClearSelectionCells={clearSelectionCells}
           onNudgeSelectionRight={nudgeSelectionRight}
+          onCreateHeightGuideFromSelection={
+            groupIdForGuides ? handleCreateHeightGuideFromSelection : undefined
+          }
+          onCreateWidthGuideFromSelection={
+            groupIdForGuides ? handleCreateWidthGuideFromSelection : undefined
+          }
           onMirrorHorizontal={handleMirrorHorizontal}
           onMirrorVertical={handleMirrorVertical}
           replaceFromColorId={replaceFromColorId}

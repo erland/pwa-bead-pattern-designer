@@ -1,5 +1,5 @@
 // src/editor/GroupPartsSidebar.tsx
-import type { BeadPattern, PatternGroup, PatternPart } from '../domain/patterns';
+import type { BeadPattern, PatternGroup, PatternPart, DimensionGuide } from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';
 import type { EditorUiState } from '../domain/uiState';
@@ -31,6 +31,9 @@ export interface GroupPartsSidebarProps {
   onRemovePart: (partId: string) => void;
   onRenamePart: (partId: string) => void;
   onMovePart: (partId: string, direction: 'up' | 'down') => void;
+  // NEW: dimension guides for this group
+  dimensionGuides?: DimensionGuide[];
+  onRemoveGuide?: (guideId: string) => void;
 }
 
 export function GroupPartsSidebar({
@@ -46,6 +49,8 @@ export function GroupPartsSidebar({
   onRemovePart,
   onRenamePart,
   onMovePart,
+  dimensionGuides,
+  onRemoveGuide,
 }: GroupPartsSidebarProps) {
   const hasParts = group.parts.length > 0;
 
@@ -117,6 +122,36 @@ export function GroupPartsSidebar({
           Create new pattern &amp; add
         </button>
       </section>
+      {dimensionGuides && dimensionGuides.length > 0 && (
+        <div className="group-parts-sidebar__section group-parts-sidebar__section--guides">
+          <h3 className="group-parts-sidebar__section-title">Guides</h3>
+          <ul className="group-parts-sidebar__guides-list">
+            {dimensionGuides.map((guide) => (
+              <li
+                key={guide.id}
+                className="group-parts-sidebar__guide-item"
+              >
+                <span className="group-parts-sidebar__guide-label">
+                  {guide.label}{' '}
+                  <span className="group-parts-sidebar__guide-meta">
+                    {guide.axis === 'horizontal' ? 'H' : 'V'} ·{' '}
+                    {guide.reference} · {guide.cells}
+                  </span>
+                </span>
+                {onRemoveGuide && (
+                  <button
+                    type="button"
+                    className="group-parts-sidebar__guide-remove"
+                    onClick={() => onRemoveGuide(guide.id)}
+                  >
+                    ✕
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </aside>
   );
 }

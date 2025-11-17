@@ -1,7 +1,7 @@
 // src/editor/PatternCanvas.tsx
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import type { BeadPattern } from '../domain/patterns';
+import type { BeadPattern, DimensionGuide } from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
 import { isCellInShape } from '../domain/shapes';
 import type { BeadPalette, BeadColor } from '../domain/colors';
@@ -21,6 +21,12 @@ export interface PatternCanvasProps {
   onCellPointerDown?: (x: number, y: number) => void;
   onCellPointerMove?: (x: number, y: number) => void;
   selectionRect?: CellRect | null;
+
+  /** Optional group-level dimension guides (e.g. wall height/width). */
+  groupGuides?: DimensionGuide[];
+
+  /** Allow callers to toggle drawing of guides (defaults to true). */
+  showGuides?: boolean;
 }
 
 type Size = { width: number; height: number };
@@ -31,6 +37,76 @@ function findColor(palette: BeadPalette, id: string | null): BeadColor | null {
   return palette.colors.find((c) => c.id === id) ?? null;
 }
 
+function drawDimensionGuides(
+  ctx: CanvasRenderingContext2D,
+  layout: CanvasLayout,
+  pattern: BeadPattern,
+  guides: DimensionGuide[],
+) {
+  const { cellSize, originX, originY, boardWidth, boardHeight } = layout;
+  const { cols, rows } = pattern;
+
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = Math.max(1, cellSize * 0.08);
+  ctx.textBaseline = 'top';
+
+  guides.forEach((guide, index) => {
+    const stroke = 'rgba(59, 130, 246, 0.85)'; // bluish, works on light/dark
+    const label = guide.label || `Guide ${index + 1}`;
+    ctx.strokeStyle = stroke;
+    ctx.fillStyle = stroke;
+
+    if (guide.axis === 'horizontal') {
+      const offset = guide.cells;
+      let rowIndex: number;
+      if (guide.reference === 'top') {
+        rowIndex = Math.max(0, Math.min(rows, offset));
+      } else {
+        // bottom (and any unexpected value) measured from bottom edge
+        rowIndex = Math.max(0, Math.min(rows, rows - offset));
+      }
+
+      const y = originY + rowIndex * cellSize + 0.5;
+
+      ctx.beginPath();
+      ctx.moveTo(originX, y);
+      ctx.lineTo(originX + boardWidth, y);
+      ctx.stroke();
+
+      ctx.font = `${Math.max(10, cellSize * 0.6)}px system-ui`;
+      ctx.fillText(label, originX + 4, y + 2);
+    } else {
+      const offset = guide.cells;
+      let colIndex: number;
+      if (guide.reference === 'left') {
+        colIndex = Math.max(0, Math.min(cols, offset));
+      } else {
+        // right (and any unexpected value) measured from right edge
+        colIndex = Math.max(0, Math.min(cols, cols - offset));
+      }
+
+      const x = originX + colIndex * cellSize + 0.5;
+
+      ctx.beginPath();
+      ctx.moveTo(x, originY);
+      ctx.lineTo(x, originY + boardHeight);
+      ctx.stroke();
+
+      ctx.font = `${Math.max(10, cellSize * 0.6)}px system-ui`;
+
+      // Draw label rotated along the line
+      ctx.save();
+      ctx.translate(x + 2, originY + 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+    }
+  });
+
+  ctx.restore();
+}
+
 function drawPattern(
   ctx: CanvasRenderingContext2D,
   layout: CanvasLayout,
@@ -39,6 +115,7 @@ function drawPattern(
   palette: BeadPalette,
   editorState: EditorUiState,
   selectionRect: CellRect | null,
+  groupGuides?: DimensionGuide[],
 ) {
   const { cols, rows, grid } = pattern;
   const { cellSize, originX, originY, boardWidth, boardHeight } = layout;
@@ -114,6 +191,11 @@ function drawPattern(
     }
   }
 
+  // Group-level dimension guides (wall height/width etc)
+  if (groupGuides && groupGuides.length > 0) {
+    drawDimensionGuides(ctx, layout, pattern, groupGuides);
+  }
+  
   // Selection overlay (if any)
   if (selectionRect) {
     const { x, y, width, height } = selectionRect;
@@ -143,6 +225,8 @@ export function PatternCanvas(props: PatternCanvasProps) {
     onCellPointerDown,
     onCellPointerMove,
     selectionRect = null,
+    groupGuides,
+    showGuides = true,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -210,8 +294,8 @@ export function PatternCanvas(props: PatternCanvasProps) {
       panY: editorState.panY,
     });
 
-    drawPattern(ctx, layout, pattern, shape, palette, editorState, selectionRect);
-  }, [pattern, shape, palette, editorState, size, selectionRect]);
+    drawPattern(ctx, layout, pattern, shape, palette, editorState, selectionRect, showGuides ? groupGuides : undefined);
+  }, [pattern, shape, palette, editorState, size, selectionRect, groupGuides, showGuides]);
 
   // Cell mapping helpers
   const getCellFromClientPoint = (point: ClientPoint) => {

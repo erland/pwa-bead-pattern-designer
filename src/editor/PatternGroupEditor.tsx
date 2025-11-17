@@ -1,7 +1,7 @@
 // src/editor/PatternGroupEditor.tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useBeadStore } from '../store/beadStore';
-import type { BeadPattern, PatternGroup } from '../domain/patterns';
+import type { BeadPattern, PatternGroup, DimensionGuide } from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';
 import { PatternEditor } from './PatternEditor';
@@ -29,6 +29,11 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
 
   // Ref for the main editor area (used for auto-scroll on mobile)
   const mainEditorRef = useRef<HTMLDivElement | null>(null);
+
+  const handleRemoveGuide = (guideId: string) => {
+    if (!group) return;
+    store.removeDimensionGuide(group.id, guideId);
+  };
 
   // Keep selectedPartId valid when group changes
   useEffect(() => {
@@ -69,6 +74,10 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
   );
 
   const selectedPatternId = selectedPart?.patternId ?? null;
+
+  // Group-level dimension guides (may be undefined)
+  const dimensionGuides: DimensionGuide[] | undefined =
+  group?.assemblyMetadata?.dimensionGuides;
 
   if (!group) {
     return (
@@ -228,6 +237,8 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
           onRemovePart={handleRemovePart}
           onRenamePart={handleRenamePart}
           onMovePart={handleMovePart}
+          dimensionGuides={dimensionGuides}
+          onRemoveGuide={handleRemoveGuide}
         />
 
         <main ref={mainEditorRef} className="group-editor__main">
@@ -253,6 +264,9 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
                   behavior: 'smooth',
                 });
               }}
+              groupIdForGuides={group.id}
+              dimensionGuides={dimensionGuides}
+              showGuidesOnCanvas
             />
           )}
         </main>

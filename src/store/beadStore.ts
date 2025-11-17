@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import type { BeadPalette, BeadColor } from '../domain/colors';
 import { DEFAULT_SHAPES, type PegboardShape, createRectangleShape } from '../domain/shapes';
-import type { BeadPattern, PatternGroup, PatternPart } from '../domain/patterns';
+import type { BeadPattern, PatternGroup, PatternPart, DimensionGuide } from '../domain/patterns';
 import { createEmptyGrid } from '../domain/patterns';
 
 type BeadStoreData = {
@@ -42,6 +42,15 @@ type BeadStoreActions = {
   removePartFromGroup: (groupId: string, partId: string) => void;
   renamePart: (groupId: string, partId: string, newName: string) => void;
   reorderParts: (groupId: string, newOrder: string[]) => void;
+
+  // 🧱 Dimension guide actions
+  addDimensionGuide: (groupId: string, guide: DimensionGuide) => void;
+  updateDimensionGuide: (
+    groupId: string,
+    guideId: string,
+    patch: Partial<DimensionGuide>,
+  ) => void;
+  removeDimensionGuide: (groupId: string, guideId: string) => void;
 };
 
 export type BeadStoreState = BeadStoreData & BeadStoreActions;
@@ -415,6 +424,80 @@ export const useBeadStore = create<BeadStoreState>((set) => ({
           [groupId]: {
             ...group,
             parts: reordered,
+          },
+        },
+      };
+    });
+  },
+  // ─────────────────────────────────────────────────────────────
+  // Dimension guides
+  // ─────────────────────────────────────────────────────────────
+
+  addDimensionGuide: (groupId, guide) => {
+    set((state) => {
+      const group = state.groups[groupId];
+      if (!group) return {};
+
+      const meta = group.assemblyMetadata ?? {};
+      const guides = meta.dimensionGuides ?? [];
+
+      return {
+        groups: {
+          ...state.groups,
+          [groupId]: {
+            ...group,
+            assemblyMetadata: {
+              ...meta,
+              dimensionGuides: [...guides, guide],
+            },
+          },
+        },
+      };
+    });
+  },
+
+  updateDimensionGuide: (groupId, guideId, patch) => {
+    set((state) => {
+      const group = state.groups[groupId];
+      const existingGuides = group?.assemblyMetadata?.dimensionGuides;
+      if (!group || !existingGuides) return {};
+
+      const nextGuides = existingGuides.map((g) =>
+        g.id === guideId ? { ...g, ...patch } : g,
+      );
+
+      return {
+        groups: {
+          ...state.groups,
+          [groupId]: {
+            ...group,
+            assemblyMetadata: {
+              ...group.assemblyMetadata,
+              dimensionGuides: nextGuides,
+            },
+          },
+        },
+      };
+    });
+  },
+
+  removeDimensionGuide: (groupId, guideId) => {
+    set((state) => {
+      const group = state.groups[groupId];
+      const existingGuides = group?.assemblyMetadata?.dimensionGuides;
+      if (!group || !existingGuides) return {};
+
+      const nextGuides = existingGuides.filter((g) => g.id !== guideId);
+
+      return {
+        groups: {
+          ...state.groups,
+          [groupId]: {
+            ...group,
+            assemblyMetadata: {
+              ...group.assemblyMetadata,
+              dimensionGuides: nextGuides,
+            },
           },
         },
       };

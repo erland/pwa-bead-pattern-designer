@@ -29,6 +29,10 @@ export interface PatternEditorSidebarProps {
   onClearSelectionCells: () => void;
   onNudgeSelectionRight: () => void;
 
+  // 👉 NEW: guide creation from selection (only used in group editor)
+  onCreateHeightGuideFromSelection?: () => void;
+  onCreateWidthGuideFromSelection?: () => void;
+
   // Mirroring
   onMirrorHorizontal: () => void;
   onMirrorVertical: () => void;
@@ -57,6 +61,8 @@ export function PatternEditorSidebar({
   onPasteSelection,
   onClearSelectionCells,
   onNudgeSelectionRight,
+  onCreateHeightGuideFromSelection,
+  onCreateWidthGuideFromSelection,
   onMirrorHorizontal,
   onMirrorVertical,
   replaceFromColorId,
@@ -221,6 +227,29 @@ export function PatternEditorSidebar({
               ➡️ Nudge →
             </button>
           </div>
+          {/* NEW: guide creation – only when callbacks are provided (group editor) */}
+          {(onCreateHeightGuideFromSelection || onCreateWidthGuideFromSelection) && (
+            <div className="pattern-editor__tool-row">
+              {onCreateHeightGuideFromSelection && (
+                <button
+                  type="button"
+                  className="tool-button"
+                  onClick={onCreateHeightGuideFromSelection}
+                >
+                  📏 Height guide
+                </button>
+              )}
+              {onCreateWidthGuideFromSelection && (
+                <button
+                  type="button"
+                  className="tool-button"
+                  onClick={onCreateWidthGuideFromSelection}
+                >
+                  📐 Width guide
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 

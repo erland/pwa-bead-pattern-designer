@@ -43,10 +43,35 @@ export interface PatternPart {
   patternId: string;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Dimension guides (group-level, used for visual wall height/width)
+// ─────────────────────────────────────────────────────────────
+
+export type DimensionGuideAxis = 'horizontal' | 'vertical';
+export type DimensionGuideReference = 'top' | 'bottom' | 'left' | 'right';
+
+export interface DimensionGuide {
+  id: string;
+  label: string;
+  axis: DimensionGuideAxis;
+  /**
+   * From which board edge we measure this guide.
+   * - horizontal + top/bottom
+   * - vertical + left/right
+   */
+  reference: DimensionGuideReference;
+  /** Number of cells from the reference edge. */
+  cells: number;
+}
+
 /** Optional assembly metadata for 3D groups (can be refined later). */
 export interface AssemblyMetadata {
   /** Optional free-text notes for assembly. */
   notes?: string;
+
+  /** Group-level dimension guides for visual alignment. */
+  dimensionGuides?: DimensionGuide[];
+
   /** Arbitrary extra structured fields can be added later. */
   [key: string]: unknown;
 }

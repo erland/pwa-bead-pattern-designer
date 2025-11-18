@@ -1,7 +1,8 @@
 // src/store/beadStore.ts
 import { create } from 'zustand';
-import type { BeadPalette } from '../domain/colors';
+import type { BeadPalette, BeadColorId } from '../domain/colors';
 import type { PegboardShape } from '../domain/shapes';
+import { createRectangleShape } from '../domain/shapes';
 import type { BeadPattern, PatternGroup, PatternPart, DimensionGuide } from '../domain/patterns';
 import { createEmptyGrid } from '../domain/patterns';
 import { createSeedData } from './seedData';
@@ -20,6 +21,9 @@ type CreatePatternInput = {
   rows: number;
   paletteId: string;
 
+  /** Optional initial grid. When omitted, an empty grid is created. */
+  grid?: (BeadColorId | null)[][];
+
   // 🆕 Optional ownership flags
   belongsToGroupId?: string | null;
   belongsToPartId?: string | null;
@@ -29,6 +33,12 @@ type BeadStoreActions = {
   createPattern: (input: CreatePatternInput) => string;
   updatePattern: (id: string, updates: Partial<Omit<BeadPattern, 'id'>>) => void;
   deletePattern: (id: string) => void;
+
+  /**
+   * Ensure there is a rectangular PegboardShape for the given cols/rows.
+   * Returns the shape id (existing or newly created).
+   */
+  ensureRectangleShape: (cols: number, rows: number) => string;
 
   createGroup: (name: string) => string;
   markGroupAsTemplate: (groupId: string, isTemplate: boolean, description?: string) => void;
@@ -81,9 +91,50 @@ function createInitialData(): BeadStoreData {
 export const useBeadStore = create<BeadStoreState>((set) => ({
   ...createInitialData(),
 
+  ensureRectangleShape: (cols, rows) => {
+    const id = `shape-rect-${cols}x${rows}`;
+  
+    set((state) => {
+      if (state.shapes[id]) {
+        // No changes – return the same state object so Zustand
+        // won't think anything changed.
+        return state;
+      }
+  
+      const name =
+        cols === rows ? `Square ${cols}×${rows}` : `Rectangle ${cols}×${rows}`;
+  
+      const shape = createRectangleShape(id, name, cols, rows);
+  
+      return {
+        ...state,
+        shapes: {
+          ...state.shapes,
+          [id]: shape,
+        },
+      };
+    });
+  
+    return id;
+  },
+  
   createPattern: (input) => {
     const id = createId('pattern');
     const now = new Date().toISOString();
+
+    // Use provided grid if it matches the requested size; otherwise fall back.
+    let grid = input.grid;
+    const rowsOk = Array.isArray(grid) && grid.length === input.rows;
+    const colsOk =
+      rowsOk &&
+      grid![0] &&
+      grid![0].length === input.cols;
+
+    const finalGrid =
+      grid && rowsOk && colsOk
+        ? grid
+        : createEmptyGrid(input.cols, input.rows);
+
     const pattern: BeadPattern = {
       id,
       name: input.name,
@@ -91,7 +142,7 @@ export const useBeadStore = create<BeadStoreState>((set) => ({
       cols: input.cols,
       rows: input.rows,
       paletteId: input.paletteId,
-      grid: createEmptyGrid(input.cols, input.rows),
+      grid: finalGrid,
       createdAt: now,
       updatedAt: now,
 

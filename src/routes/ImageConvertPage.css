@@ -1,0 +1,228 @@
+/* src/routes/ImageConvertPage.css */
+
+.image-convert {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.image-convert__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.image-convert__title {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.image-convert__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text-subtle);
+}
+
+.image-convert__create-button {
+  align-self: center;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  cursor: pointer;
+}
+
+.image-convert__create-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.image-convert__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 900px) {
+  .image-convert__content {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.image-convert__controls {
+  flex: 0 0 280px;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.image-convert__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.image-convert__field--inline {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.image-convert__label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.image-convert__file-input {
+  font-size: 0.85rem;
+}
+
+.image-convert__number-input,
+.image-convert__select {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+}
+
+.image-convert__number-input {
+  width: 5rem;
+}
+
+.image-convert__times {
+  font-size: 1.2rem;
+  align-self: center;
+}
+
+.image-convert__convert-button {
+  margin-top: 0.5rem;
+  align-self: flex-start;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-button-bg);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.image-convert__convert-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.image-convert__error {
+  color: var(--color-danger, #b91c1c);
+  font-size: 0.85rem;
+}
+
+.image-convert__legend {
+  margin-top: 0.5rem;
+}
+
+.image-convert__legend-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+}
+
+.image-convert__legend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+}
+
+.image-convert__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.image-convert__legend-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.4);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.image-convert__legend-name {
+  white-space: nowrap;
+}
+
+.image-convert__preview {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .image-convert__preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.image-convert__preview-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.image-convert__preview-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.image-convert__image-frame,
+.image-convert__canvas-frame {
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-subtle);
+  padding: 0.5rem;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-convert__image {
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+  border-radius: 0.5rem;
+}
+
+.image-convert__preview-placeholder {
+  font-size: 0.85rem;
+  color: var(--color-text-subtle);
+}
+
+@media (max-width: 600px) {
+  .image-convert__controls {
+    max-width: none;
+  }
+
+  .image-convert__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .image-convert__create-button {
+    align-self: flex-start;
+  }
+}

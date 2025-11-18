@@ -282,13 +282,13 @@ function createSeedPalettes(): Record<string, BeadPalette> {
   // Collect all palettes into a map
   const map: Record<string, BeadPalette> = {};
   for (const palette of [
-    hamaAllPalette,
-    hamaSolidPalette,
+    hamaClassicPalette,
+    hamaNeonPalette,
     hamaTranslucentPalette,
     hamaGlowPalette,
     hamaShinePalette,
-    hamaNeonPalette,
-    hamaClassicPalette,
+    hamaSolidPalette,
+    hamaAllPalette,
     demoPalette,
   ]) {
     map[palette.id] = palette;

@@ -307,7 +307,12 @@ export function PatternEditorSidebar({
         </p>
         <p>Palette: {palette.name}</p>
 
-        <button
+        <p className="pattern-editor__hint">
+          Tip: Choose a tool and color, then click the grid to draw. Use Select to
+          move or copy areas. Undo/Redo lets you experiment freely.
+        </p>
+      </div>
+      <button
           type="button"
           className="tool-button pattern-editor__palette-button"
           onClick={onOpenPaletteDialog}
@@ -315,11 +320,6 @@ export function PatternEditorSidebar({
           🎨 Edit pattern palette…
         </button>
 
-        <p className="pattern-editor__hint">
-          Tip: Choose a tool and color, then click the grid to draw. Use Select to
-          move or copy areas. Undo/Redo lets you experiment freely.
-        </p>
-      </div>
     </aside>
   );
 }

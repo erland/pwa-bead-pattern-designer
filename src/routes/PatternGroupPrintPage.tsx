@@ -29,6 +29,15 @@ export function PatternGroupPrintPage() {
   const shapes = store.shapes;
   const palettes = store.palettes;
 
+  // Global color lookup: all colors from all palettes
+  const colorsById = useMemo(() => {
+    const map = new Map<string, BeadColor>();
+    Object.values(palettes).forEach((p) => {
+      p.colors.forEach((c) => map.set(c.id, c));
+    });
+    return map;
+  }, [palettes]);
+
   // Mark body as "group print mode" while this page is mounted
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -201,7 +210,7 @@ export function PatternGroupPrintPage() {
             </p>
           ) : (
             <div style={containerStyle}>
-              {partsToRender.map((part, index) => {
+              {partsToRender.map((part) => {
                 const pattern = patterns[part.patternId];
                 if (!pattern) {
                   return null;
@@ -219,24 +228,35 @@ export function PatternGroupPrintPage() {
                     colorId: string;
                     count: number;
                   }[] = [];
+
                   Object.entries(counts).forEach(([colorId, count]) => {
-                    const color = palette.colors.find((c) => c.id === colorId);
+                    const color = colorsById.get(colorId);
                     entries.push({ color, colorId, count });
                   });
+
+                  const paletteColors = palette.colors;
+
+                  // Sort primarily by order in the part's primary palette (if present),
+                  // otherwise by color name / colorId.
                   entries.sort((a, b) => {
                     const ia = a.color
-                      ? palette.colors.findIndex(
-                          (c) => c.id === a.color!.id,
-                        )
+                      ? paletteColors.findIndex((c) => c.id === a.color!.id)
                       : Number.MAX_SAFE_INTEGER;
                     const ib = b.color
-                      ? palette.colors.findIndex(
-                          (c) => c.id === b.color!.id,
-                        )
+                      ? paletteColors.findIndex((c) => c.id === b.color!.id)
                       : Number.MAX_SAFE_INTEGER;
+
                     if (ia !== ib) return ia - ib;
+
+                    const nameA = a.color?.name ?? '';
+                    const nameB = b.color?.name ?? '';
+                    if (nameA && nameB && nameA !== nameB) {
+                      return nameA.localeCompare(nameB);
+                    }
+
                     return a.colorId.localeCompare(b.colorId);
                   });
+
                   return entries;
                 })();
 
@@ -269,8 +289,9 @@ export function PatternGroupPrintPage() {
                             shape={shape}
                             palette={palette}
                             editorState={PRINT_EDITOR_STATE}
+                            colorsById={colorsById}
                           />
-                        </div>                  
+                        </div>
                       </div>
 
                       <div className="group-print__legend-col">

@@ -1,3 +1,4 @@
+// src/routes/PatternPrintPage.tsx
 import { useMemo, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
@@ -10,7 +11,7 @@ import './PatternPrintPage.css';
 const PRINT_EDITOR_STATE: EditorUiState = {
   selectedTool: 'pencil',
   selectedColorId: null,
-  zoom: 1, // was 1 – make the printed canvas noticeably larger
+  zoom: 1,
   panX: 0,
   panY: 0,
   gridVisible: true,
@@ -27,6 +28,15 @@ export function PatternPrintPage() {
 
   const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
 
+  // Global color lookup: all colors from all palettes
+  const colorsById = useMemo(() => {
+    const map = new Map<string, BeadColor>();
+    Object.values(store.palettes).forEach((p) => {
+      p.colors.forEach((c) => map.set(c.id, c));
+    });
+    return map;
+  }, [store.palettes]);
+
   // Mark body as "print-mode" while this page is mounted so we can
   // limit the printout only to this component.
   useEffect(() => {
@@ -38,29 +48,41 @@ export function PatternPrintPage() {
   }, []);
 
   const beadLegend = useMemo(() => {
-    if (!pattern || !palette) return [];
+    if (!pattern) return [];
+
     const counts = computeBeadCounts(pattern);
     const entries: { color: BeadColor | undefined; colorId: string; count: number }[] = [];
 
     Object.entries(counts).forEach(([colorId, count]) => {
-      const color = palette.colors.find((c) => c.id === colorId);
+      const color = colorsById.get(colorId);
       entries.push({ color, colorId, count });
     });
 
-    // Sort by palette order (index in palette.colors), fallback by colorId
+    const paletteColors = palette?.colors ?? [];
+
+    // Sort primarily by order in the pattern's primary palette (if present),
+    // otherwise by color name / colorId.
     entries.sort((a, b) => {
       const ia = a.color
-        ? palette.colors.findIndex((c) => c.id === a.color!.id)
+        ? paletteColors.findIndex((c) => c.id === a.color!.id)
         : Number.MAX_SAFE_INTEGER;
       const ib = b.color
-        ? palette.colors.findIndex((c) => c.id === b.color!.id)
+        ? paletteColors.findIndex((c) => c.id === b.color!.id)
         : Number.MAX_SAFE_INTEGER;
+
       if (ia !== ib) return ia - ib;
+
+      const nameA = a.color?.name ?? '';
+      const nameB = b.color?.name ?? '';
+      if (nameA && nameB && nameA !== nameB) {
+        return nameA.localeCompare(nameB);
+      }
+
       return a.colorId.localeCompare(b.colorId);
     });
 
     return entries;
-  }, [pattern, palette]);
+  }, [pattern, palette, colorsById]);
 
   if (!projectId) {
     return (
@@ -92,8 +114,8 @@ export function PatternPrintPage() {
       type: 'application/json',
     });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
     const safeName = pattern.name.replace(/[^a-z0-9-_]+/gi, '_').toLowerCase();
+    const link = document.createElement('a');
     link.href = url;
     link.download = `${safeName || 'pattern'}_${pattern.id}.json`;
     document.body.appendChild(link);
@@ -157,6 +179,7 @@ export function PatternPrintPage() {
               shape={shape}
               palette={palette}
               editorState={PRINT_EDITOR_STATE}
+              colorsById={colorsById}
             />
           </div>
         </section>
@@ -190,7 +213,9 @@ export function PatternPrintPage() {
                           stroke="rgba(148, 163, 184, 0.7)"
                           strokeWidth="1"
                           fill={
-                            color ? `rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})` : 'transparent'
+                            color
+                              ? `rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`
+                              : 'transparent'
                           }
                         />
                       </svg>

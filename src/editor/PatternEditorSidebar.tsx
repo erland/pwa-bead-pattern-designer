@@ -1,11 +1,12 @@
 // src/editor/PatternEditorSidebar.tsx
 import type { EditorUiState } from '../domain/uiState';
-import type { BeadPalette } from '../domain/colors';
+import type { BeadPalette, BeadColor } from '../domain/colors';
 import type { BeadGrid, CellRect } from './tools';
 import { PalettePanel } from './PalettePanel';
 
 export interface PatternEditorSidebarProps {
   palette: BeadPalette;
+  activeColors: BeadColor[];
 
   shapeName: string;
   cols: number;
@@ -29,7 +30,7 @@ export interface PatternEditorSidebarProps {
   onClearSelectionCells: () => void;
   onNudgeSelectionRight: () => void;
 
-  // 👉 NEW: guide creation from selection (only used in group editor)
+  // Guides (only used in group editor)
   onCreateHeightGuideFromSelection?: () => void;
   onCreateWidthGuideFromSelection?: () => void;
 
@@ -40,10 +41,14 @@ export interface PatternEditorSidebarProps {
   // Replace color mode
   replaceFromColorId: string | null;
   onEnterReplaceMode: () => void;
+
+  // Open palette management dialog
+  onOpenPaletteDialog: () => void;
 }
 
 export function PatternEditorSidebar({
   palette,
+  activeColors,
   shapeName,
   cols,
   rows,
@@ -67,22 +72,23 @@ export function PatternEditorSidebar({
   onMirrorVertical,
   replaceFromColorId,
   onEnterReplaceMode,
+  onOpenPaletteDialog,
 }: PatternEditorSidebarProps) {
   const fromColor =
     replaceFromColorId != null
-      ? palette.colors.find((c) => c.id === replaceFromColorId) ?? null
+      ? activeColors.find((c) => c.id === replaceFromColorId) ?? null
       : null;
 
   const toColor =
     editorState.selectedColorId != null
-      ? palette.colors.find((c) => c.id === editorState.selectedColorId) ?? null
+      ? activeColors.find((c) => c.id === editorState.selectedColorId) ?? null
       : null;
 
   return (
     <aside className="pattern-editor__sidebar">
-      {/* Palette first, no caption */}
+      {/* Pattern palette (active colors) */}
       <PalettePanel
-        palette={palette}
+        colors={activeColors}
         selectedColorId={editorState.selectedColorId}
         onSelectColor={onSelectColor}
       />
@@ -134,7 +140,6 @@ export function PatternEditorSidebar({
             ⬚ Select
           </button>
 
-          {/* One-click symmetry actions */}
           <button
             type="button"
             className="tool-button"
@@ -150,7 +155,6 @@ export function PatternEditorSidebar({
             ↕ Mirror
           </button>
 
-          {/* Global color replace: enter replace mode */}
           <button
             type="button"
             className="tool-button"
@@ -181,7 +185,7 @@ export function PatternEditorSidebar({
         </div>
       </div>
 
-      {/* Selection tools – only show when there is a selection */}
+      {/* Selection tools */}
       {selectionRect && (
         <div className="pattern-editor__section">
           <p>
@@ -227,7 +231,6 @@ export function PatternEditorSidebar({
               ➡️ Nudge →
             </button>
           </div>
-          {/* NEW: guide creation – only when callbacks are provided (group editor) */}
           {(onCreateHeightGuideFromSelection || onCreateWidthGuideFromSelection) && (
             <div className="pattern-editor__tool-row">
               {onCreateHeightGuideFromSelection && (
@@ -253,7 +256,7 @@ export function PatternEditorSidebar({
         </div>
       )}
 
-      {/* Global color operations – only visible while replace mode is active */}
+      {/* Global color operations – visible while replace mode is active */}
       {replaceFromColorId && (
         <div className="pattern-editor__section">
           <div className="pattern-editor__color-row">
@@ -303,6 +306,15 @@ export function PatternEditorSidebar({
           Size: {cols} × {rows}
         </p>
         <p>Palette: {palette.name}</p>
+
+        <button
+          type="button"
+          className="tool-button pattern-editor__palette-button"
+          onClick={onOpenPaletteDialog}
+        >
+          🎨 Edit pattern palette…
+        </button>
+
         <p className="pattern-editor__hint">
           Tip: Choose a tool and color, then click the grid to draw. Use Select to
           move or copy areas. Undo/Redo lets you experiment freely.

@@ -62,6 +62,10 @@ type BeadStoreActions = {
     patch: Partial<DimensionGuide>,
   ) => void;
   removeDimensionGuide: (groupId: string, guideId: string) => void;
+  /** Palette management per pattern */
+  addColorToPattern: (patternId: string, colorId: BeadColorId) => void;
+  removeColorFromPattern: (patternId: string, colorId: BeadColorId) => void;
+  setPatternActiveColors: (patternId: string, colorIds: BeadColorId[]) => void;
 };
 
 export type BeadStoreState = BeadStoreData & BeadStoreActions;
@@ -72,6 +76,15 @@ export type BeadStoreState = BeadStoreData & BeadStoreActions;
 
 function createId(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function inferActiveColorIdsForPattern(
+  pattern: BeadPattern,
+  palettes: Record<string, BeadPalette>,
+): BeadColorId[] {
+  const palette = palettes[pattern.paletteId];
+  if (!palette) return [];
+  return palette.colors.map((c) => c.id);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -476,6 +489,72 @@ export const useBeadStore = create<BeadStoreState>((set) => ({
               ...group.assemblyMetadata,
               dimensionGuides: nextGuides,
             },
+          },
+        },
+      };
+    });
+  },
+  
+  addColorToPattern: (patternId, colorId) => {
+    set((state) => {
+      const pattern = state.patterns[patternId];
+      if (!pattern) return state;
+      const active =
+        pattern.activeColorIds ??
+        inferActiveColorIdsForPattern(pattern, state.palettes);
+      if (active.includes(colorId)) {
+        return state;
+      }
+      return {
+        ...state,
+        patterns: {
+          ...state.patterns,
+          [patternId]: {
+            ...pattern,
+            activeColorIds: [...active, colorId],
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+    });
+  },
+
+  removeColorFromPattern: (patternId, colorId) => {
+    set((state) => {
+      const pattern = state.patterns[patternId];
+      if (!pattern) return state;
+      const active =
+        pattern.activeColorIds ??
+        inferActiveColorIdsForPattern(pattern, state.palettes);
+      const next = active.filter((id) => id !== colorId);
+      // Policy choice: only remove from active list; do NOT auto-clear grid cells
+      // using this color. If you prefer auto-clear, you can also map over grid here.
+      return {
+        ...state,
+        patterns: {
+          ...state.patterns,
+          [patternId]: {
+            ...pattern,
+            activeColorIds: next,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+    });
+  },
+
+  setPatternActiveColors: (patternId, colorIds) => {
+    set((state) => {
+      const pattern = state.patterns[patternId];
+      if (!pattern) return state;
+      return {
+        ...state,
+        patterns: {
+          ...state.patterns,
+          [patternId]: {
+            ...pattern,
+            activeColorIds: [...new Set(colorIds)],
+            updatedAt: new Date().toISOString(),
           },
         },
       };

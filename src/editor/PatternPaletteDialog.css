@@ -1,0 +1,133 @@
+.pattern-palette-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.pattern-palette-dialog {
+  background: #ffffff;
+  max-width: 820px;
+  width: 90%;
+  max-height: 90vh;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.pattern-palette-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.5rem;
+}
+
+.pattern-palette-dialog__header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.pattern-palette-dialog__close-button {
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.pattern-palette-dialog__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: auto;
+}
+
+.pattern-palette-dialog__controls {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.pattern-palette-dialog__category-select {
+  font-size: 0.9rem;
+}
+
+.pattern-palette-dialog__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.pattern-palette-dialog__column h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.pattern-palette-dialog__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+
+.pattern-palette-dialog__color {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  cursor: pointer;
+}
+
+.pattern-palette-dialog__color--active {
+  background: #ffffff;
+}
+
+.pattern-palette-dialog__swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  flex-shrink: 0;
+}
+
+.pattern-palette-dialog__label {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pattern-palette-dialog__empty {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.pattern-palette-dialog__footer {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Simple responsive tweak for narrow mobile screens */
+@media (max-width: 600px) {
+  .pattern-palette-dialog__columns {
+    grid-template-columns: 1fr;
+  }
+
+  .pattern-palette-dialog {
+    width: 95%;
+    max-height: 95vh;
+  }
+}

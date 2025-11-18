@@ -16,7 +16,7 @@ export interface BeadColor {
   /** Human-friendly name, e.g. "Light Blue" */
   name: string;
   /** Owning palette id */
-  paletteId: string;
+  paletteId?: string;
   /** Display color */
   rgb: RgbColor;
 }

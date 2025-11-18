@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
 import type { EditorUiState } from '../domain/uiState';
-import type { BeadColorId } from '../domain/colors';
+import type { BeadColor, BeadColorId } from '../domain/colors';
 import type { BeadPattern } from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
 import { PatternCanvas } from '../editor/PatternCanvas';
@@ -44,6 +44,14 @@ export function ImageConvertPage() {
     (state) => state.ensureRectangleShape,
   );
   const createPattern = useBeadStore((state) => state.createPattern);
+
+  const colorsById = useMemo(() => {
+    const map = new Map<BeadColorId, BeadColor>();
+    Object.values(palettes).forEach((p) => {
+      p.colors.forEach((c) => map.set(c.id, c));
+    });
+    return map;
+  }, [palettes]);
 
   const paletteList = useMemo(
     () => Object.values(palettes),
@@ -411,6 +419,7 @@ export function ImageConvertPage() {
                   shape={previewShape}
                   palette={previewPalette}
                   editorState={PREVIEW_EDITOR_STATE}
+                  colorsById={colorsById}
                 />
               </div>
             ) : (

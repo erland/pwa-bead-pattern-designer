@@ -1,17 +1,18 @@
 // src/editor/PalettePanel.tsx
-import type { BeadPalette } from '../domain/colors';
+import type { BeadColor, BeadColorId } from '../domain/colors';
 
 export interface PalettePanelProps {
-  palette: BeadPalette;
+  /** Colors available in this pattern (already filtered). */
+  colors: BeadColor[];
   selectedColorId: string | null;
   onSelectColor: (colorId: string) => void;
 }
 
-export function PalettePanel({ palette, selectedColorId, onSelectColor }: PalettePanelProps) {
+export function PalettePanel({ colors, selectedColorId, onSelectColor }: PalettePanelProps) {
   return (
     <section className="palette-panel" aria-label="Palette">
       <div className="palette-panel__grid">
-        {palette.colors.map((color) => {
+        {colors.map((color) => {
           const isSelected = color.id === selectedColorId;
           return (
             <button

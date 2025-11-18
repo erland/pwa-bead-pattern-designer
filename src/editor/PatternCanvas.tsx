@@ -4,7 +4,7 @@ import type React from 'react';
 import type { BeadPattern, DimensionGuide } from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
 import { isCellInShape } from '../domain/shapes';
-import type { BeadPalette, BeadColor } from '../domain/colors';
+import type { BeadPalette, BeadColor, BeadColorId } from '../domain/colors';
 import type { EditorUiState } from '../domain/uiState';
 import {
   computeCanvasLayout,
@@ -27,13 +27,29 @@ export interface PatternCanvasProps {
 
   /** Allow callers to toggle drawing of guides (defaults to true). */
   showGuides?: boolean;
+
+  /** Global color lookup so a pattern can use colors from multiple palettes. */
+  colorsById: Map<BeadColorId, BeadColor>;
 }
 
 type Size = { width: number; height: number };
 type ClientPoint = { clientX: number; clientY: number };
 
-function findColor(palette: BeadPalette, id: string | null): BeadColor | null {
+/**
+ * Resolve a bead color:
+ *  - First from the global colorsById map (supports multi-palette patterns)
+ *  - Then fall back to the pattern's primary palette (legacy behavior)
+ */
+function findColor(
+  palette: BeadPalette,
+  colorsById: Map<BeadColorId, BeadColor>,
+  id: string | null,
+): BeadColor | null {
   if (!id) return null;
+
+  const fromMap = colorsById.get(id as BeadColorId);
+  if (fromMap) return fromMap;
+
   return palette.colors.find((c) => c.id === id) ?? null;
 }
 
@@ -115,7 +131,8 @@ function drawPattern(
   palette: BeadPalette,
   editorState: EditorUiState,
   selectionRect: CellRect | null,
-  groupGuides?: DimensionGuide[],
+  groupGuides: DimensionGuide[] | undefined,
+  colorsById: Map<BeadColorId, BeadColor>,
 ) {
   const { cols, rows, grid } = pattern;
   const { cellSize, originX, originY, boardWidth, boardHeight } = layout;
@@ -134,7 +151,7 @@ function drawPattern(
       const valid = isCellInShape(shape, x, y);
 
       const cellValue = grid[y]?.[x] ?? null;
-      const color = findColor(palette, cellValue);
+      const color = findColor(palette, colorsById, cellValue);
 
       if (!valid) {
         ctx.fillStyle = '#e5e5e5';
@@ -153,33 +170,33 @@ function drawPattern(
       if (color) {
         const centerX = cx + cellSize / 2;
         const centerY = cy + cellSize / 2;
-      
+
         // Outer radius = 80% of cell, like before
         const outerRadius = (cellSize * 0.8) / 2;
         // Inner radius = hole in the bead (tweak 0.45–0.6 to taste)
-        const innerRadius = outerRadius * 0.50;
-      
+        const innerRadius = outerRadius * 0.5;
+
         const { r, g, b } = color.rgb;
-      
+
         // --- Outer colored disc ---
         ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         ctx.beginPath();
         ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
         ctx.closePath();
         ctx.fill();
-      
+
         // Optional outer edge for a bit of definition
         ctx.strokeStyle = 'rgba(0,0,0,0.25)';
         ctx.lineWidth = Math.max(1, cellSize * 0.04);
         ctx.stroke();
-      
+
         // --- Inner hole (same as cell background, currently white) ---
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
         ctx.closePath();
         ctx.fill();
-      
+
         // Tiny inner shadow for “depth”
         ctx.strokeStyle = 'rgba(0,0,0,0.15)';
         ctx.lineWidth = Math.max(0.5, cellSize * 0.03);
@@ -214,7 +231,7 @@ function drawPattern(
   if (groupGuides && groupGuides.length > 0) {
     drawDimensionGuides(ctx, layout, pattern, groupGuides);
   }
-  
+
   // Selection overlay (if any)
   if (selectionRect) {
     const { x, y, width, height } = selectionRect;
@@ -246,6 +263,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
     selectionRect = null,
     groupGuides,
     showGuides = true,
+    colorsById,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -313,8 +331,28 @@ export function PatternCanvas(props: PatternCanvasProps) {
       panY: editorState.panY,
     });
 
-    drawPattern(ctx, layout, pattern, shape, palette, editorState, selectionRect, showGuides ? groupGuides : undefined);
-  }, [pattern, shape, palette, editorState, size, selectionRect, groupGuides, showGuides]);
+    drawPattern(
+      ctx,
+      layout,
+      pattern,
+      shape,
+      palette,
+      editorState,
+      selectionRect,
+      showGuides ? groupGuides : undefined,
+      colorsById,
+    );
+  }, [
+    pattern,
+    shape,
+    palette,
+    editorState,
+    size,
+    selectionRect,
+    groupGuides,
+    showGuides,
+    colorsById,
+  ]);
 
   // Cell mapping helpers
   const getCellFromClientPoint = (point: ClientPoint) => {

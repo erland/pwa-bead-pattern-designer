@@ -1,9 +1,10 @@
 // src/editor/PatternEditor.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useBeadStore } from '../store/beadStore';
 import { isCellInShape } from '../domain/shapes';
 import type { DimensionGuide } from '../domain/patterns';
 import type { EditorUiState } from '../domain/uiState';
+import type { BeadColor, BeadColorId } from '../domain/colors';
 import { PatternCanvas } from './PatternCanvas';
 import {
   applyPencil,
@@ -18,6 +19,7 @@ import { usePatternHistory } from './usePatternHistory';
 import { useSelectionTools } from './useSelectionTools';
 import { PatternEditorHeader } from './PatternEditorHeader';
 import { PatternEditorSidebar } from './PatternEditorSidebar';
+import { PatternPaletteDialog } from './PatternPaletteDialog';
 import '../routes/PatternEditorPage.css';
 
 function createGuideId(): string {
@@ -61,6 +63,7 @@ export function PatternEditor({
   const pattern = store.patterns[patternId] ?? null;
   const shape = pattern ? store.shapes[pattern.shapeId] : undefined;
   const palette = pattern ? store.palettes[pattern.paletteId] : undefined;
+  const palettes = store.palettes;
 
   const [editorState, setEditorState] = useState<EditorUiState>(() => ({
     selectedTool: 'pencil',
@@ -74,6 +77,9 @@ export function PatternEditor({
 
   // Global color replace state
   const [replaceFromColorId, setReplaceFromColorId] = useState<string | null>(null);
+
+  // Palette dialog open/close
+  const [isPaletteDialogOpen, setPaletteDialogOpen] = useState(false);
 
   // History & grid management (per pattern)
   const {
@@ -98,14 +104,43 @@ export function PatternEditor({
     pasteSelection,
     clearSelectionCells,
     nudgeSelectionRight,
-    setClipboard,
   } = useSelectionTools(getCurrentGrid, applyHistoryChange);
 
   // ─────────────────────────────────────────────────────────────
-  // Dimension guides: create from current selection (group editor)
+  // Active colors for this pattern (per-pattern palette)
   // ─────────────────────────────────────────────────────────────
 
-    // ─────────────────────────────────────────────────────────────
+  const colorsById = useMemo(() => {
+    const map = new Map<BeadColorId, BeadColor>();
+    Object.values(palettes).forEach((p) => {
+      p.colors.forEach((c) => map.set(c.id, c));
+    });
+    return map;
+  }, [palettes]);
+
+  const activeColorIds: BeadColorId[] = useMemo(() => {
+    if (!pattern) return [];
+  
+    // If there is NO activeColorIds field yet, this pattern is still using
+    // the default palette → show all colors from the pattern's palette.
+    if (pattern.activeColorIds === undefined) {
+      if (!palette) return [];
+      return palette.colors.map((c) => c.id);
+    }
+  
+    // If activeColorIds exists (even if it's []), respect it as the truth.
+    return pattern.activeColorIds;
+  }, [pattern, palette]);
+
+  const activeColors: BeadColor[] = useMemo(
+    () =>
+      activeColorIds
+        .map((id) => colorsById.get(id))
+        .filter((c): c is BeadColor => !!c),
+    [activeColorIds, colorsById],
+  );
+
+  // ─────────────────────────────────────────────────────────────
   // Dimension guides: create from current selection (group editor)
   // ─────────────────────────────────────────────────────────────
 
@@ -116,9 +151,7 @@ export function PatternEditor({
     const rows = pattern.rows;
 
     // Selection covers rows [y, y + height - 1]
-    // Top edge line index:
     const topLine = selectionRect.y; // 0..rows
-    // Bottom edge line index (after the last row in the selection):
     const bottomLine = selectionRect.y + selectionRect.height; // 0..rows
 
     const topGuide: DimensionGuide = {
@@ -126,7 +159,6 @@ export function PatternEditor({
       label: 'Top',
       axis: 'horizontal',
       reference: 'top',
-      // line index from top
       cells: topLine,
     };
 
@@ -135,7 +167,6 @@ export function PatternEditor({
       label: 'Bottom',
       axis: 'horizontal',
       reference: 'bottom',
-      // line index from bottom: rows - bottomLine
       cells: rows - bottomLine,
     };
 
@@ -150,16 +181,14 @@ export function PatternEditor({
 
     const cols = pattern.cols;
 
-    // Selection covers cols [x, x + width - 1]
-    const leftLine = selectionRect.x; // left edge line index: 0..cols
-    const rightLine = selectionRect.x + selectionRect.width; // right edge line index: 0..cols
+    const leftLine = selectionRect.x;
+    const rightLine = selectionRect.x + selectionRect.width;
 
     const leftGuide: DimensionGuide = {
       id: createGuideId(),
       label: 'Left',
       axis: 'vertical',
       reference: 'left',
-      // line index from left
       cells: leftLine,
     };
 
@@ -168,7 +197,6 @@ export function PatternEditor({
       label: 'Right',
       axis: 'vertical',
       reference: 'right',
-      // line index from right: cols - rightLine
       cells: cols - rightLine,
     };
 
@@ -190,23 +218,35 @@ export function PatternEditor({
     }
   }, [rememberAsLastOpened, patternId]);
 
-  // Keep selectedColorId in sync if palette changes (e.g. initial load)
+  // Keep selectedColorId in sync when active colors change
   useEffect(() => {
-    if (!palette) return;
-    if (!editorState.selectedColorId && palette.colors.length > 0) {
+    if (activeColors.length === 0) {
       setEditorState((prev) => ({
         ...prev,
-        selectedColorId: palette.colors[0].id,
+        selectedColorId: null,
+      }));
+      return;
+    }
+  
+    if (
+      !editorState.selectedColorId ||
+      !activeColors.some((c) => c.id === editorState.selectedColorId)
+    ) {
+      const firstId = activeColors[0].id;
+      setEditorState((prev) => ({
+        ...prev,
+        selectedColorId: firstId,
       }));
     }
-  }, [palette, editorState.selectedColorId]);
+  }, [activeColors, editorState.selectedColorId]);
 
-  // When switching to another pattern (e.g. another group part), clear selection,
-  // clipboard and replace-mode so each pattern starts with a clean editor state.
+  // When switching to another pattern, clear selection & replace mode
   useEffect(() => {
     clearSelection();
     setReplaceFromColorId(null);
-  }, [patternId, clearSelection, setClipboard]);
+    // keep palette dialog closed when switching patterns
+    setPaletteDialogOpen(false);
+  }, [patternId, clearSelection]);
 
   if (!pattern || !shape || !palette) {
     return (
@@ -245,20 +285,16 @@ export function PatternEditor({
   const handleSelectTool = (tool: EditorUiState['selectedTool']) => {
     setEditorState((prev) => ({ ...prev, selectedTool: tool }));
 
-    // If we leave the Select tool, clear the current selection.
     if (tool !== 'select') {
       clearSelection();
     }
 
-    // Leaving the current drawing context: cancel replace mode as well.
     setReplaceFromColorId(null);
   };
 
   const handleSelectColor = (colorId: string) => {
     setEditorState((prev) => ({ ...prev, selectedColorId: colorId }));
 
-    // If a "from" color is set and we pick a different "to" color,
-    // automatically replace all occurrences in the pattern, then exit replace mode.
     if (replaceFromColorId && replaceFromColorId !== colorId) {
       const fromId = replaceFromColorId;
       applyHistoryChange((g) => replaceColor(g, fromId, colorId));
@@ -266,10 +302,6 @@ export function PatternEditor({
     }
   };
 
-  /**
-   * Basic tools: pencil / eraser / fill
-   * (still the same behavior, but we now call through applyHistoryChange).
-   */
   const applyToolAtCell = (x: number, y: number) => {
     if (!isCellInShape(shape, x, y)) {
       return;
@@ -287,12 +319,10 @@ export function PatternEditor({
       if (!editorState.selectedColorId) return;
       newGrid = applyFill(currentGrid, x, y, editorState.selectedColorId);
     } else {
-      // Other tools handled elsewhere (e.g. 'select')
       return;
     }
 
     if (newGrid === currentGrid) {
-      // No change (e.g. fill into same color)
       return;
     }
 
@@ -303,12 +333,10 @@ export function PatternEditor({
     if (!isCellInShape(shape, x, y)) return;
 
     if (editorState.selectedTool === 'select') {
-      // Start a new selection on each pointer down
       beginSelection(x, y);
       return;
     }
 
-    // Other tools: apply once at pointer down
     applyToolAtCell(x, y);
   };
 
@@ -321,7 +349,6 @@ export function PatternEditor({
       return;
     }
 
-    // For drawing tools, support drag: pencil/eraser continuous, fill only on down.
     if (editorState.selectedTool === 'pencil' || editorState.selectedTool === 'eraser') {
       applyToolAtCell(x, y);
     }
@@ -335,21 +362,17 @@ export function PatternEditor({
     if (!trimmed || trimmed === currentTitle) return;
 
     if (onRenameTitle) {
-      // Group editor case: rename the part
       onRenameTitle(trimmed);
     } else {
-      // Standalone pattern editor: rename the pattern itself
       store.updatePattern(pattern.id, { name: trimmed });
     }
   };
 
-  // Global color operations
   const handlePickFromColor = () => {
     if (!editorState.selectedColorId) return;
     setReplaceFromColorId(editorState.selectedColorId);
   };
 
-  // Mirroring
   const handleMirrorHorizontal = () => {
     applyHistoryChange((g) => mirrorGridHorizontally(g));
   };
@@ -385,11 +408,13 @@ export function PatternEditor({
             selectionRect={selectionRect}
             groupGuides={showGuidesOnCanvas ? dimensionGuides : undefined}
             showGuides={showGuidesOnCanvas}
+            colorsById={colorsById} 
           />
         </div>
 
         <PatternEditorSidebar
           palette={palette}
+          activeColors={activeColors}
           shapeName={shape.name}
           cols={pattern.cols}
           rows={pattern.rows}
@@ -417,8 +442,18 @@ export function PatternEditor({
           onMirrorVertical={handleMirrorVertical}
           replaceFromColorId={replaceFromColorId}
           onEnterReplaceMode={handlePickFromColor}
+          onOpenPaletteDialog={() => setPaletteDialogOpen(true)}
         />
       </div>
+
+      {isPaletteDialogOpen && (
+        <PatternPaletteDialog
+          pattern={pattern}
+          palettes={palettes}
+          activeColors={activeColors}
+          onClose={() => setPaletteDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }

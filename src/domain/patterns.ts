@@ -31,6 +31,9 @@ export interface BeadPattern {
   /** Pattern grid, row-major: grid[row][col]. */
   grid: (BeadColorId | null)[][];
 
+  /** New: which colors from the global catalog are available in this pattern. */
+  activeColorIds?: BeadColorId[];
+  
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
 import {
@@ -10,6 +10,7 @@ import type { EditorUiState } from '../domain/uiState';
 import { NewPatternDialog } from './NewPatternDialog';
 import { TemplateGroupDialog } from './TemplateGroupDialog';
 import { NewGroupDialog } from './NewGroupDialog';
+import type { BeadColor, BeadColorId } from '../domain/colors';
 import './HomePage.css';
 
 const HOME_THUMBNAIL_EDITOR_STATE: EditorUiState = {
@@ -37,6 +38,14 @@ export function HomePage() {
   const createGroupFromTemplateGroup = useBeadStore(
     (state) => state.createGroupFromTemplateGroup,
   );
+
+  const colorsById = useMemo(() => {
+    const map = new Map<BeadColorId, BeadColor>();
+    Object.values(palettes).forEach((p) => {
+      p.colors.forEach((c) => map.set(c.id, c));
+    });
+    return map;
+  }, [palettes]);
 
   const templateGroups = Object.values(groupsMap).filter((g) => g.isTemplate);
 
@@ -222,6 +231,7 @@ export function HomePage() {
                             shape={shape}
                             palette={palette}
                             editorState={HOME_THUMBNAIL_EDITOR_STATE}
+                            colorsById={colorsById}
                           />
                         </div>
                       )}
@@ -280,6 +290,7 @@ export function HomePage() {
                           shape={shape}
                           palette={palette}
                           editorState={HOME_THUMBNAIL_EDITOR_STATE}
+                          colorsById={colorsById}
                         />
                       </div>
                     )}

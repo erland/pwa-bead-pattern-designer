@@ -1,5 +1,5 @@
 // src/routes/TemplateGroupDialog.tsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PatternGroup } from '../domain/patterns';
 
 export interface TemplateGroupDialogProps {

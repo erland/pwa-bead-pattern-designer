@@ -1,5 +1,5 @@
 // src/routes/NewPatternDialog.tsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';
 import { ShapePaletteSelector } from '../editor/ShapePaletteSelector';

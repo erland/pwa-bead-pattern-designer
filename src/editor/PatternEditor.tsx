@@ -205,7 +205,6 @@ export function PatternEditor({
   // clipboard and replace-mode so each pattern starts with a clean editor state.
   useEffect(() => {
     clearSelection();
-    setClipboard(null);
     setReplaceFromColorId(null);
   }, [patternId, clearSelection, setClipboard]);
 

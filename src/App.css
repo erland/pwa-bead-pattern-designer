@@ -222,6 +222,20 @@ body {
   flex-direction: column;
 }
 
+/* iOS input zoom fix for dialogs:
+   ensure dialog text inputs are >= 16px so iOS doesn't auto-zoom */
+.new-pattern-dialog {
+  font-size: 1rem; /* 16px if your root is 16px */
+}
+
+.new-pattern-dialog input[type='text'],
+.new-pattern-dialog input[type='number'],
+.new-pattern-dialog select,
+.new-pattern-dialog textarea {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
 /* Mobile tweaks */
 @media (max-width: 640px) {
   .app-header {

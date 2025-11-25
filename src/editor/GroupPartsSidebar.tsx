@@ -1,4 +1,5 @@
 // src/editor/GroupPartsSidebar.tsx
+import { useMemo } from 'react';
 import type {
   BeadPattern,
   PatternGroup,
@@ -6,7 +7,11 @@ import type {
   DimensionGuide,
 } from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
-import type { BeadPalette } from '../domain/colors';
+import type {
+  BeadPalette,
+  BeadColor,
+  BeadColorId,
+} from '../domain/colors';
 import type { EditorUiState } from '../domain/uiState';
 import { PatternCanvas } from './PatternCanvas';
 
@@ -56,6 +61,19 @@ export function GroupPartsSidebar({
 }: GroupPartsSidebarProps) {
   const hasParts = group.parts.length > 0;
 
+  // DRY, typed color lookup map shared by all thumbnails
+  const colorsById = useMemo(() => {
+    const map = new Map<BeadColorId, BeadColor>();
+
+    Object.values(palettes).forEach((palette) => {
+      palette.colors.forEach((color) => {
+        map.set(color.id, color);
+      });
+    });
+
+    return map;
+  }, [palettes]);
+
   return (
     <aside className="group-editor__sidebar">
       <section>
@@ -100,6 +118,7 @@ export function GroupPartsSidebar({
                     pattern={pattern}
                     shape={shape}
                     palette={palette}
+                    colorsById={colorsById}
                     onMovePart={onMovePart}
                     onRenamePart={onRenamePart}
                     onRemovePart={onRemovePart}
@@ -148,6 +167,7 @@ interface PartRowProps {
   pattern?: BeadPattern;
   shape?: PegboardShape;
   palette?: BeadPalette;
+  colorsById: Map<BeadColorId, BeadColor>;
   onMovePart: (partId: string, direction: 'up' | 'down') => void;
   onRenamePart: (partId: string) => void;
   onRemovePart: (partId: string) => void;
@@ -159,6 +179,7 @@ function PartRow({
   pattern,
   shape,
   palette,
+  colorsById,
   onMovePart,
   onRenamePart,
   onRemovePart,
@@ -234,6 +255,7 @@ function PartRow({
             shape={shape}
             palette={palette}
             editorState={THUMBNAIL_EDITOR_STATE}
+            colorsById={colorsById}
           />
         </div>
       )}

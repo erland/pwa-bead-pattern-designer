@@ -42,12 +42,12 @@ type ClientPoint = { clientX: number; clientY: number };
  */
 function findColor(
   palette: BeadPalette,
-  colorsById: Map<BeadColorId, BeadColor>,
+  colorsById: Map<BeadColorId, BeadColor> | undefined,
   id: string | null,
 ): BeadColor | null {
   if (!id) return null;
 
-  const fromMap = colorsById.get(id as BeadColorId);
+  const fromMap = colorsById?.get(id as BeadColorId);
   if (fromMap) return fromMap;
 
   return palette.colors.find((c) => c.id === id) ?? null;

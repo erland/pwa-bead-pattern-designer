@@ -16,7 +16,9 @@ export default defineConfig({
         name: 'Bead Pattern Designer',
         short_name: 'Bead Designer',
         start_url: base,
+        scope: base,
         display: 'standalone',
+        orientation: 'portrait',
         background_color: '#111827',
         theme_color: '#111827',
         icons: [

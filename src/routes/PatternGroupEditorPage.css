@@ -325,6 +325,11 @@
     padding-top: 0.5rem;
   }
 
+  .group-editor__main {
+    /* Enough room for the PatternEditor header + some breathing space */
+    scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+  }
+
   /* Ensure the embedded pattern editor canvas in the group editor
      behaves like the standalone editor on touch devices. */
   .group-editor__main canvas {

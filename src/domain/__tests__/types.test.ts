@@ -22,7 +22,7 @@ describe('color type guards', () => {
   });
 
   it('rejects an invalid BeadColor', () => {
-    const invalid: any = { ...validColor, rgb: { r: '255', g: 0, b: 0 } };
+    const invalid: unknown = { ...validColor, rgb: { r: '255', g: 0, b: 0 } };
     expect(isBeadColor(invalid)).toBe(false);
   });
 
@@ -31,7 +31,7 @@ describe('color type guards', () => {
   });
 
   it('rejects an invalid BeadPalette', () => {
-    const invalid: any = { id: 'p2', name: 'Broken', colors: 'not-an-array' };
+    const invalid: unknown = { id: 'p2', name: 'Broken', colors: 'not-an-array' };
     expect(isBeadPalette(invalid)).toBe(false);
   });
 });

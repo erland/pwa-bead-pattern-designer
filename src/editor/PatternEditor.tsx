@@ -244,14 +244,6 @@ function PatternEditorContent({
     }
   }, [activeColors, editorState.selectedColorId]);
 
-  // When switching to another pattern, clear selection & replace mode
-  useEffect(() => {
-    clearSelection();
-    setReplaceFromColorId(null);
-    // keep palette dialog closed when switching patterns
-    setPaletteDialogOpen(false);
-  }, [patternId, clearSelection]);
-
   if (!pattern || !shape || !palette) {
     return (
       <div className="pattern-editor">

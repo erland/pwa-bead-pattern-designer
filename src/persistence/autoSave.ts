@@ -23,7 +23,7 @@ function debounce<Args extends unknown[]>(fn: (...args: Args) => void, delayMs: 
       window.clearTimeout(timeoutId);
     }
     timeoutId = window.setTimeout(() => {
-      fn(...(args as Parameters<T>));
+      fn(...args);
     }, delayMs);
   };
 }

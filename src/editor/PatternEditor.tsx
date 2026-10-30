@@ -93,7 +93,7 @@ function PatternEditorContent({
     canRedo,
     undo,
     redo,
-  } = usePatternHistory(pattern, pattern ? pattern.id : null);
+  } = usePatternHistory(pattern);
 
   // Selection & clipboard tools
   const {

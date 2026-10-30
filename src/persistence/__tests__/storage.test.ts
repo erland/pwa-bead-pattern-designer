@@ -62,13 +62,13 @@ describe('StorageService (in-memory fallback)', () => {
 
   beforeEach(() => {
     // Force the service into "no IndexedDB" mode so it uses memorySnapshot
-    globalThis.indexedDB = undefined;
+    Object.assign(globalThis, { indexedDB: undefined });
     __resetStorageServiceForTests();
   });
 
   afterAll(() => {
     // Restore original indexedDB implementation after tests
-    globalThis.indexedDB = originalIndexedDB;
+    Object.assign(globalThis, { indexedDB: originalIndexedDB });
   });
 
   it('returns null from loadAll() when nothing has been saved', async () => {

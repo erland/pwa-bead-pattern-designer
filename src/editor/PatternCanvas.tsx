@@ -1,5 +1,5 @@
 // src/editor/PatternCanvas.tsx
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type React from 'react';
 import type { BeadPattern, DimensionGuide } from '../domain/patterns';
 import type { PegboardShape } from '../domain/shapes';
@@ -355,7 +355,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
   ]);
 
   // Cell mapping helpers
-  const getCellFromClientPoint = (point: ClientPoint) => {
+  const getCellFromClientPoint = useCallback((point: ClientPoint) => {
     const canvas = canvasRef.current;
     if (!canvas || size.width === 0 || size.height === 0) return null;
 
@@ -378,9 +378,9 @@ export function PatternCanvas(props: PatternCanvasProps) {
     if (!isCellInShape(shape, cell.x, cell.y)) return null;
 
     return cell;
-  };
+  }, [size.width, size.height, pattern.cols, pattern.rows, shape, editorState.zoom, editorState.panX, editorState.panY]);
 
-  const startDrawingAtPoint = (point: ClientPoint) => {
+  const startDrawingAtPoint = useCallback((point: ClientPoint) => {
     if (!onCellPointerDown) return;
 
     const cell = getCellFromClientPoint(point);
@@ -389,9 +389,9 @@ export function PatternCanvas(props: PatternCanvasProps) {
     isDrawingRef.current = true;
     lastCellRef.current = cell;
     onCellPointerDown(cell.x, cell.y);
-  };
+  }, [getCellFromClientPoint, onCellPointerDown]);
 
-  const continueDrawingAtPoint = (point: ClientPoint) => {
+  const continueDrawingAtPoint = useCallback((point: ClientPoint) => {
     if (!isDrawingRef.current) return;
 
     const cell = getCellFromClientPoint(point);
@@ -408,7 +408,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
       // Fallback so drag-drawing still works if only "down" is wired
       onCellPointerDown(cell.x, cell.y);
     }
-  };
+  }, [getCellFromClientPoint, onCellPointerMove, onCellPointerDown]);
 
   const stopDrawing = () => {
     isDrawingRef.current = false;
@@ -493,7 +493,7 @@ export function PatternCanvas(props: PatternCanvasProps) {
       canvas.removeEventListener('touchend', handleTouchEnd);
       canvas.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [isInteractive, onCellPointerDown, onCellPointerMove, pattern, shape, palette, editorState]);
+  }, [isInteractive, startDrawingAtPoint, continueDrawingAtPoint]);
 
   return (
     <div

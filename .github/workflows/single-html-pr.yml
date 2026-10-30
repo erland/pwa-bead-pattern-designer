@@ -32,6 +32,11 @@ jobs:
         continue-on-error: true
       - run: pnpm run build
       - run: pnpm run build:single
+      - name: Browser smoke test (Chromium file://)
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bead-playwright" --no-save playwright@1.56.1
+          "$RUNNER_TEMP/bead-playwright/node_modules/.bin/playwright" install --with-deps chromium
+          PLAYWRIGHT_PACKAGE="$RUNNER_TEMP/bead-playwright/node_modules/playwright" node scripts/smoke-single-html.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: bead-pattern-designer-single-html

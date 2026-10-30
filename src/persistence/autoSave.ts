@@ -43,7 +43,6 @@ export function initializeAutoSave(): void {
       await StorageService.saveAll(snapshot);
     } catch (error) {
       // Non-fatal: just log for debugging.
-      // eslint-disable-next-line no-console
       console.error('Auto-save failed', error);
     }
   }, 800); // ~0.8s debounce after last change

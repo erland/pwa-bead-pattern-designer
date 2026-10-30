@@ -39,7 +39,6 @@ const ROOT_KEY = 'root';
 
 // Simple runtime check so importing this file in Node/Jest is safe.
 function hasIndexedDB(): boolean {
-  // eslint-disable-next-line no-undef
   return typeof indexedDB !== 'undefined';
 }
 
@@ -83,7 +82,6 @@ function openDatabase(): Promise<IDBDatabase> {
   }
 
   return new Promise((resolve, reject) => {
-    // eslint-disable-next-line no-undef
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onupgradeneeded = () => {
@@ -169,7 +167,6 @@ async function saveAll(snapshot: PersistedBeadState): Promise<void> {
       await idbSaveAll(snapshot);
     } catch (err) {
       // For now, just log; we don't want the app to crash on persistence errors.
-      // eslint-disable-next-line no-console
       console.warn('StorageService.saveAll: failed to persist to IndexedDB', err);
     }
   } else {
@@ -192,7 +189,6 @@ async function loadAll(): Promise<PersistedBeadState | null> {
     try {
       return await idbLoadAll();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.warn('StorageService.loadAll: failed to read from IndexedDB', err);
       return null;
     }

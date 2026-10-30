@@ -12,7 +12,11 @@ try {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(url);
-  await page.getByText('Bead Pattern Designer').first().waitFor();
+  await page.getByRole('link', { name: 'Patterns' }).waitFor({ timeout: 8000 }).catch(async () => {
+    console.error('Page errors:', errors);
+    console.error('Body:', (await page.locator('body').innerText()).slice(0, 1500));
+    throw new Error('Standalone application did not render navigation');
+  });
   await page.getByRole('link', { name: 'Convert Image' }).click();
   await page.waitForURL(/#\/convert$/);
   await page.getByRole('link', { name: 'Patterns' }).click();

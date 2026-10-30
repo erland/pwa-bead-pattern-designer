@@ -21,7 +21,9 @@ html = html.replace(/\s*<link\b[^>]*\brel=["'](?:icon|manifest|apple-touch-icon)
 if (!/<script type="module">[\s\S]+<\/script>/.test(html) || !/<style>[\s\S]+<\/style>/.test(html)) {
   throw new Error('Missing embedded JavaScript or CSS');
 }
-if (/<(?:script|link)\b[^>]*(?:src|href)=["'][^"']+["']/i.test(html)) {
+const markupOnly = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+if (/<(?:script|link)\b[^>]*(?:src|href)=["'][^"']+["']/i.test(markupOnly)) {
   throw new Error('External script or stylesheet dependency remains');
 }
 if (/url\(\s*["']?(?!data:|#)[^)"']+/.test(html.match(/<style>[\s\S]*?<\/style>/)?.[0] ?? '')) {

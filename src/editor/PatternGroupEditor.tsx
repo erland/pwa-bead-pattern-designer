@@ -21,7 +21,10 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
   const shapes: Record<string, PegboardShape> = store.shapes;
   const palettes: Record<string, BeadPalette> = store.palettes;
 
-  const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
+  const [requestedPartId, setSelectedPartId] = useState<string | null>(null);
+  const selectedPartId = group?.parts.some((part) => part.id === requestedPartId)
+    ? requestedPartId
+    : group?.parts[0]?.id ?? null;
   const [newPartName, setNewPartName] = useState('');
   const [isNewPartDialogOpen, setIsNewPartDialogOpen] = useState(false);
   const [dialogShapeId, setDialogShapeId] = useState<string>('');
@@ -34,23 +37,6 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
     if (!group) return;
     store.removeDimensionGuide(group.id, guideId);
   };
-
-  // Keep selectedPartId valid when group changes
-  useEffect(() => {
-    if (!group) {
-      setSelectedPartId(null);
-      return;
-    }
-
-    if (group.parts.length === 0) {
-      setSelectedPartId(null);
-      return;
-    }
-
-    if (!selectedPartId || !group.parts.some((p) => p.id === selectedPartId)) {
-      setSelectedPartId(group.parts[0].id);
-    }
-  }, [group, selectedPartId]);
 
   // Auto-scroll to the editor on mobile when a part is selected
   useEffect(() => {
@@ -231,8 +217,6 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
           palettes={palettes}
           selectedPartId={selectedPartId}
           onSelectPart={setSelectedPartId}
-          newPartName={newPartName}
-          onChangeNewPartName={setNewPartName}
           onOpenNewPatternDialog={openNewPatternDialog}
           onRemovePart={handleRemovePart}
           onRenamePart={handleRenamePart}

@@ -53,22 +53,22 @@ function createSampleState(): PersistedBeadState {
 }
 
 describe('StorageService (in-memory fallback)', () => {
-  let originalIndexedDB: any;
+  let originalIndexedDB: IDBFactory | undefined;
 
   beforeAll(() => {
     // Remember whatever Jest/jsdom has set up for indexedDB
-    originalIndexedDB = (globalThis as any).indexedDB;
+    originalIndexedDB = globalThis.indexedDB;
   });
 
   beforeEach(() => {
     // Force the service into "no IndexedDB" mode so it uses memorySnapshot
-    (globalThis as any).indexedDB = undefined;
+    Object.assign(globalThis, { indexedDB: undefined });
     __resetStorageServiceForTests();
   });
 
   afterAll(() => {
     // Restore original indexedDB implementation after tests
-    (globalThis as any).indexedDB = originalIndexedDB;
+    Object.assign(globalThis, { indexedDB: originalIndexedDB });
   });
 
   it('returns null from loadAll() when nothing has been saved', async () => {

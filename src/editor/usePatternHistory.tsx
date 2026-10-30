@@ -1,5 +1,5 @@
 // src/editor/usePatternHistory.ts
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { cloneGrid, type BeadGrid } from './tools';
 import {
   createInitialHistory,
@@ -11,19 +11,13 @@ import {
 import type { BeadPattern } from '../domain/patterns';
 import { useBeadStore } from '../store/beadStore';
 
-export function usePatternHistory(pattern: BeadPattern | null, patternId: string | null) {
+export function usePatternHistory(pattern: BeadPattern | null) {
   const store = useBeadStore();
-  const [history, setHistory] = useState<HistoryState | null>(null);
-
-  // Reset when we switch to a *different* pattern id,
-  // but do NOT reset on every grid update.
-  useEffect(() => {
-    if (!pattern) {
-      setHistory(null);
-      return;
-    }
-    setHistory(createInitialHistory(cloneGrid(pattern.grid)));
-  }, [patternId]); // <-- removed `pattern` here
+  // PatternEditor is keyed by pattern id. Initialize the history once on mount,
+  // not whenever the persisted grid changes during editing.
+  const [history, setHistory] = useState<HistoryState | null>(() =>
+    pattern ? createInitialHistory(cloneGrid(pattern.grid)) : null,
+  );
 
   const getCurrentGrid = useCallback(
     (): BeadGrid => (history ? history.present : pattern?.grid ?? []),

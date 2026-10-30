@@ -48,7 +48,11 @@ export type PatternEditorProps = {
  * Reusable pattern editor that edits a single BeadPattern by id.
  * Used both as the standalone /editor/:projectId page and inside the group editor.
  */
-export function PatternEditor({
+export function PatternEditor(props: PatternEditorProps) {
+  return <PatternEditorContent key={props.patternId} {...props} />;
+}
+
+function PatternEditorContent({
   patternId,
   rememberAsLastOpened = true,
   titleOverride,
@@ -89,7 +93,7 @@ export function PatternEditor({
     canRedo,
     undo,
     redo,
-  } = usePatternHistory(pattern, pattern ? pattern.id : null);
+  } = usePatternHistory(pattern);
 
   // Selection & clipboard tools
   const {
@@ -218,35 +222,11 @@ export function PatternEditor({
     }
   }, [rememberAsLastOpened, patternId]);
 
-  // Keep selectedColorId in sync when active colors change
-  useEffect(() => {
-    if (activeColors.length === 0) {
-      setEditorState((prev) => ({
-        ...prev,
-        selectedColorId: null,
-      }));
-      return;
-    }
-  
-    if (
-      !editorState.selectedColorId ||
-      !activeColors.some((c) => c.id === editorState.selectedColorId)
-    ) {
-      const firstId = activeColors[0].id;
-      setEditorState((prev) => ({
-        ...prev,
-        selectedColorId: firstId,
-      }));
-    }
-  }, [activeColors, editorState.selectedColorId]);
-
-  // When switching to another pattern, clear selection & replace mode
-  useEffect(() => {
-    clearSelection();
-    setReplaceFromColorId(null);
-    // keep palette dialog closed when switching patterns
-    setPaletteDialogOpen(false);
-  }, [patternId, clearSelection]);
+  // Use a valid active color even when the previously chosen color was removed.
+  const selectedColorId = activeColorIds.includes(editorState.selectedColorId ?? '')
+    ? editorState.selectedColorId
+    : activeColorIds[0] ?? null;
+  const effectiveEditorState: EditorUiState = { ...editorState, selectedColorId };
 
   if (!pattern || !shape || !palette) {
     return (
@@ -311,13 +291,13 @@ export function PatternEditor({
     let newGrid = currentGrid;
 
     if (editorState.selectedTool === 'pencil') {
-      if (!editorState.selectedColorId) return;
-      newGrid = applyPencil(currentGrid, x, y, editorState.selectedColorId);
+      if (!selectedColorId) return;
+      newGrid = applyPencil(currentGrid, x, y, selectedColorId);
     } else if (editorState.selectedTool === 'eraser') {
       newGrid = applyEraser(currentGrid, x, y);
     } else if (editorState.selectedTool === 'fill') {
-      if (!editorState.selectedColorId) return;
-      newGrid = applyFill(currentGrid, x, y, editorState.selectedColorId);
+      if (!selectedColorId) return;
+      newGrid = applyFill(currentGrid, x, y, selectedColorId);
     } else {
       return;
     }
@@ -369,8 +349,8 @@ export function PatternEditor({
   };
 
   const handlePickFromColor = () => {
-    if (!editorState.selectedColorId) return;
-    setReplaceFromColorId(editorState.selectedColorId);
+    if (!selectedColorId) return;
+    setReplaceFromColorId(selectedColorId);
   };
 
   const handleMirrorHorizontal = () => {
@@ -402,7 +382,7 @@ export function PatternEditor({
             pattern={pattern}
             shape={shape}
             palette={palette}
-            editorState={editorState}
+            editorState={effectiveEditorState}
             onCellPointerDown={handleCellPointerDown}
             onCellPointerMove={handleCellPointerMove}
             selectionRect={selectionRect}
@@ -418,7 +398,7 @@ export function PatternEditor({
           shapeName={shape.name}
           cols={pattern.cols}
           rows={pattern.rows}
-          editorState={editorState}
+          editorState={effectiveEditorState}
           canUndo={canUndo}
           canRedo={canRedo}
           onSelectTool={handleSelectTool}

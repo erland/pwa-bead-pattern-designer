@@ -111,7 +111,6 @@ export function GroupPartsSidebar({
                       ? 'group-editor__part-item group-editor__part-item--selected'
                       : 'group-editor__part-item'
                   }
-                  onClick={() => onSelectPart(part.id)}
                 >
                   <PartRow
                     part={part}
@@ -123,6 +122,7 @@ export function GroupPartsSidebar({
                     onRenamePart={onRenamePart}
                     onRemovePart={onRemovePart}
                     onSelectPart={onSelectPart}
+                    isSelected={isSelected}
                   />
                 </li>
               );
@@ -172,6 +172,7 @@ interface PartRowProps {
   onRenamePart: (partId: string) => void;
   onRemovePart: (partId: string) => void;
   onSelectPart: (partId: string) => void;
+  isSelected: boolean;
 }
 
 function PartRow({
@@ -184,18 +185,19 @@ function PartRow({
   onRenamePart,
   onRemovePart,
   onSelectPart,
+  isSelected,
 }: PartRowProps) {
   return (
     <>
       <div className="group-editor__part-main">
-        <span className="group-editor__part-main-text">
+        <button type="button" className="group-editor__part-main-text" aria-pressed={isSelected} onClick={() => onSelectPart(part.id)}>
           {part.name}{' '}
           {pattern && (
             <span className="group-editor__part-meta">
               ({pattern.cols}×{pattern.rows})
             </span>
           )}
-        </span>
+        </button>
       </div>
 
       <div className="group-editor__part-actions">

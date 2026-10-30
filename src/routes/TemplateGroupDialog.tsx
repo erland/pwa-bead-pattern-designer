@@ -1,5 +1,5 @@
 // src/routes/TemplateGroupDialog.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { PatternGroup } from '../domain/patterns';
 
 export interface TemplateGroupDialogProps {
@@ -17,28 +17,28 @@ export function TemplateGroupDialog({
   onCancel,
   onCreateFromTemplate,
 }: TemplateGroupDialogProps) {
+  if (!isOpen) return null;
+
+  return (
+    <TemplateGroupDialogContent
+      templateGroups={templateGroups}
+      groupsById={groupsById}
+      onCancel={onCancel}
+      onCreateFromTemplate={onCreateFromTemplate}
+    />
+  );
+}
+
+function TemplateGroupDialogContent({
+  templateGroups,
+  groupsById,
+  onCancel,
+  onCreateFromTemplate,
+}: Omit<TemplateGroupDialogProps, 'isOpen'>) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-    null,
+    () => templateGroups[0]?.id ?? null,
   );
   const [name, setName] = useState<string>('');
-
-  // When dialog opens, pick first template and default name from it
-  useEffect(() => {
-    if (!isOpen) return;
-
-    if (templateGroups.length === 0) {
-      setSelectedTemplateId(null);
-      setName('');
-      return;
-    }
-
-    const first = templateGroups[0];
-    setSelectedTemplateId(first.id);
-  }, [isOpen, templateGroups]);
-
-  if (!isOpen) {
-    return null;
-  }
 
   const selectedTemplate =
     selectedTemplateId != null ? groupsById[selectedTemplateId] : undefined;

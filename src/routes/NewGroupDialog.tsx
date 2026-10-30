@@ -1,5 +1,5 @@
 // src/routes/NewGroupDialog.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export interface NewGroupDialogProps {
   isOpen: boolean;
@@ -12,14 +12,12 @@ export function NewGroupDialog({
   onCancel,
   onCreate,
 }: NewGroupDialogProps) {
-  const [name, setName] = useState<string>('');
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setName('');
-  }, [isOpen]);
-
   if (!isOpen) return null;
+  return <NewGroupDialogContent onCancel={onCancel} onCreate={onCreate} />;
+}
+
+function NewGroupDialogContent({ onCancel, onCreate }: Pick<NewGroupDialogProps, 'onCancel' | 'onCreate'>) {
+  const [name, setName] = useState<string>('');
 
   const handleConfirm = () => {
     const finalName = name.trim() || 'New Pattern Group';

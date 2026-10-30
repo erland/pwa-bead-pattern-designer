@@ -9,14 +9,13 @@ import { StorageService } from './storage';
 import type { PersistedBeadState } from './storage';
 
 // Tiny debounce helper (no extra deps).
-function debounce<T extends (...args: any[]) => void>(fn: T, delayMs: number): T {
+function debounce<Args extends unknown[]>(fn: (...args: Args) => void, delayMs: number): (...args: Args) => void {
   let timeoutId: number | undefined;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ((...args: any[]) => {
+  return (...args: Args) => {
     if (typeof window === 'undefined') {
       // In non-browser environments, just call immediately.
-      fn(...(args as Parameters<T>));
+      fn(...args);
       return;
     }
 
@@ -24,9 +23,9 @@ function debounce<T extends (...args: any[]) => void>(fn: T, delayMs: number): T
       window.clearTimeout(timeoutId);
     }
     timeoutId = window.setTimeout(() => {
-      fn(...(args as Parameters<T>));
+      fn(...args);
     }, delayMs);
-  }) as T;
+  };
 }
 
 let initialized = false;
@@ -44,7 +43,6 @@ export function initializeAutoSave(): void {
       await StorageService.saveAll(snapshot);
     } catch (error) {
       // Non-fatal: just log for debugging.
-      // eslint-disable-next-line no-console
       console.error('Auto-save failed', error);
     }
   }, 800); // ~0.8s debounce after last change

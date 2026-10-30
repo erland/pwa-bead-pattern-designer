@@ -48,7 +48,6 @@ export function saveAppSettings(settings: AppSettings): void {
     window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   } catch {
     // Swallow errors – persistence is best-effort.
-    // eslint-disable-next-line no-console
     console.error('Failed to save app settings');
   }
 }

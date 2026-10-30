@@ -2,7 +2,7 @@
 //
 // Small button that toggles between light/dark theme and persists it.
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   getCurrentAppSettings,
   setTheme,
@@ -10,12 +10,7 @@ import {
 } from './appSettings';
 
 export function ThemeToggle() {
-  const [theme, setThemeState] = useState<ThemeMode>('light');
-
-  useEffect(() => {
-    const settings = getCurrentAppSettings();
-    setThemeState(settings.theme);
-  }, []);
+  const [theme, setThemeState] = useState<ThemeMode>(() => getCurrentAppSettings().theme);
 
   const handleToggle = () => {
     const next: ThemeMode = theme === 'light' ? 'dark' : 'light';

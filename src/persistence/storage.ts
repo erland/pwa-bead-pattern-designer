@@ -39,7 +39,6 @@ const ROOT_KEY = 'root';
 
 // Simple runtime check so importing this file in Node/Jest is safe.
 function hasIndexedDB(): boolean {
-  // eslint-disable-next-line no-undef
   return typeof indexedDB !== 'undefined';
 }
 
@@ -48,6 +47,30 @@ function hasIndexedDB(): boolean {
 // ─────────────────────────────────────────────────────────────────────────────
 
 let memorySnapshot: PersistedBeadState | null = null;
+const FILE_STORAGE_KEY = 'bead-pattern-designer.file-state.v1';
+
+function isLocalFile(): boolean {
+  return typeof window !== 'undefined' && window.location.protocol === 'file:';
+}
+
+function loadFileSnapshot(): PersistedBeadState | null {
+  try {
+    const value = window.localStorage.getItem(FILE_STORAGE_KEY);
+    return value ? JSON.parse(value) as PersistedBeadState : memorySnapshot;
+  } catch {
+    return memorySnapshot;
+  }
+}
+
+function saveFileSnapshot(snapshot: PersistedBeadState): void {
+  memorySnapshot = snapshot;
+  try {
+    window.localStorage.setItem(FILE_STORAGE_KEY, JSON.stringify(snapshot));
+  } catch {
+    console.warn('Local file storage unavailable; export your patterns to keep them.');
+  }
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // IndexedDB helpers
@@ -59,7 +82,6 @@ function openDatabase(): Promise<IDBDatabase> {
   }
 
   return new Promise((resolve, reject) => {
-    // eslint-disable-next-line no-undef
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onupgradeneeded = () => {
@@ -136,12 +158,15 @@ async function idbLoadAll(): Promise<PersistedBeadState | null> {
  * - In other environments (e.g. tests), it stores the snapshot in memory only.
  */
 async function saveAll(snapshot: PersistedBeadState): Promise<void> {
+  if (isLocalFile()) {
+    saveFileSnapshot(snapshot);
+    return;
+  }
   if (hasIndexedDB()) {
     try {
       await idbSaveAll(snapshot);
     } catch (err) {
       // For now, just log; we don't want the app to crash on persistence errors.
-      // eslint-disable-next-line no-console
       console.warn('StorageService.saveAll: failed to persist to IndexedDB', err);
     }
   } else {
@@ -159,11 +184,11 @@ async function saveAll(snapshot: PersistedBeadState): Promise<void> {
  * In non-IndexedDB environments, this reads from the in-memory fallback.
  */
 async function loadAll(): Promise<PersistedBeadState | null> {
+  if (isLocalFile()) return loadFileSnapshot();
   if (hasIndexedDB()) {
     try {
       return await idbLoadAll();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.warn('StorageService.loadAll: failed to read from IndexedDB', err);
       return null;
     }

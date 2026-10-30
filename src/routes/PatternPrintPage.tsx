@@ -127,13 +127,11 @@ export function PatternPrintPage() {
   const handleExportPng = () => {
     const wrapper = canvasWrapperRef.current;
     if (!wrapper) {
-      // eslint-disable-next-line no-alert
       window.alert('Canvas not ready yet.');
       return;
     }
     const canvas = wrapper.querySelector('canvas');
     if (!canvas) {
-      // eslint-disable-next-line no-alert
       window.alert('Canvas not found.');
       return;
     }

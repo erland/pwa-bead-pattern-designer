@@ -200,5 +200,8 @@ Pages-versionen använder den hashbaserad routing och innehåller ingen PWA-serv
 worker. Vid release publicerar GitHub Actions även filen som nedladdningsbar
 workflow-artifact. PR:er bygger och testar båda varianterna.
 
-Lokal fillagring är webbläsarberoende. Exportera viktiga mönster regelbundet;
-HTML-filen i sig innehåller inte automatiskt dina sparade projekt.
+På GitHub öppnar du den publicerade releasens körning under **Actions → Deploy to GitHub Pages on Release** och hämtar artefakten **bead-pattern-designer-single-html**. Packa upp ZIP-filen och öppna `bead-pattern-designer.html` lokalt. Filen publiceras som en **workflow-artefakt**, inte som en bilaga på GitHub-releasens Assets-lista. Åtkomst kan kräva GitHub-inloggning och artefakten finns bara kvar under GitHub Actions lagringstid.
+
+I den fristående versionen sparas mönster i webbläsarens `localStorage` för `file://`. Lagringen är kopplad till webbläsaren och dess lokala filhantering; att flytta filen, byta webbläsare eller rensa webbplatsdata kan göra att sparade mönster inte längre nås. Om `localStorage` inte fungerar används enbart minneslagring under den öppna sessionen. **Exportera viktiga mönster regelbundet:** den fristående HTML-filen innehåller inte automatiskt dina sparade projekt.
+
+Vid pull requests och releaser körs ett Chromium-test som öppnar filen via `file://` och kontrollerar navigering, skapande och redigering av mönster, ångra/gör om samt sparning och återläsning. Detta bekräftar beteendet i testad Chromium-miljö, inte i alla webbläsare.

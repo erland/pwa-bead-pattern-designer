@@ -1,7 +1,7 @@
 // src/main.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, HashRouter } from 'react-router-dom';
 import App from './App';
 import { initializeBeadStoreFromStorage } from './persistence/bootstrap';
 import { initializeAutoSave } from './persistence/autoSave';
@@ -17,12 +17,15 @@ initAppSettings();
 void initializeBeadStoreFromStorage();
 initializeAutoSave();
 
+declare const __SINGLE_FILE__: boolean;
+const standalone = typeof __SINGLE_FILE__ !== 'undefined' && __SINGLE_FILE__;
 const basename = import.meta.env.BASE_URL;
+const Router = standalone ? HashRouter : BrowserRouter;
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <BrowserRouter basename={basename}>
+    <Router basename={standalone ? undefined : basename}>
       <App />
-    </BrowserRouter>
+    </Router>
   </React.StrictMode>,
 );

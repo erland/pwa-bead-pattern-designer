@@ -222,27 +222,11 @@ function PatternEditorContent({
     }
   }, [rememberAsLastOpened, patternId]);
 
-  // Keep selectedColorId in sync when active colors change
-  useEffect(() => {
-    if (activeColors.length === 0) {
-      setEditorState((prev) => ({
-        ...prev,
-        selectedColorId: null,
-      }));
-      return;
-    }
-  
-    if (
-      !editorState.selectedColorId ||
-      !activeColors.some((c) => c.id === editorState.selectedColorId)
-    ) {
-      const firstId = activeColors[0].id;
-      setEditorState((prev) => ({
-        ...prev,
-        selectedColorId: firstId,
-      }));
-    }
-  }, [activeColors, editorState.selectedColorId]);
+  // Use a valid active color even when the previously chosen color was removed.
+  const selectedColorId = activeColorIds.includes(editorState.selectedColorId ?? '')
+    ? editorState.selectedColorId
+    : activeColorIds[0] ?? null;
+  const effectiveEditorState: EditorUiState = { ...editorState, selectedColorId };
 
   if (!pattern || !shape || !palette) {
     return (
@@ -307,13 +291,13 @@ function PatternEditorContent({
     let newGrid = currentGrid;
 
     if (editorState.selectedTool === 'pencil') {
-      if (!editorState.selectedColorId) return;
-      newGrid = applyPencil(currentGrid, x, y, editorState.selectedColorId);
+      if (!selectedColorId) return;
+      newGrid = applyPencil(currentGrid, x, y, selectedColorId);
     } else if (editorState.selectedTool === 'eraser') {
       newGrid = applyEraser(currentGrid, x, y);
     } else if (editorState.selectedTool === 'fill') {
-      if (!editorState.selectedColorId) return;
-      newGrid = applyFill(currentGrid, x, y, editorState.selectedColorId);
+      if (!selectedColorId) return;
+      newGrid = applyFill(currentGrid, x, y, selectedColorId);
     } else {
       return;
     }
@@ -365,8 +349,8 @@ function PatternEditorContent({
   };
 
   const handlePickFromColor = () => {
-    if (!editorState.selectedColorId) return;
-    setReplaceFromColorId(editorState.selectedColorId);
+    if (!selectedColorId) return;
+    setReplaceFromColorId(selectedColorId);
   };
 
   const handleMirrorHorizontal = () => {
@@ -398,7 +382,7 @@ function PatternEditorContent({
             pattern={pattern}
             shape={shape}
             palette={palette}
-            editorState={editorState}
+            editorState={effectiveEditorState}
             onCellPointerDown={handleCellPointerDown}
             onCellPointerMove={handleCellPointerMove}
             selectionRect={selectionRect}
@@ -414,7 +398,7 @@ function PatternEditorContent({
           shapeName={shape.name}
           cols={pattern.cols}
           rows={pattern.rows}
-          editorState={editorState}
+          editorState={effectiveEditorState}
           canUndo={canUndo}
           canRedo={canRedo}
           onSelectTool={handleSelectTool}

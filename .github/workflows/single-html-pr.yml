@@ -23,9 +23,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Lint (existing project issues tracked separately)
+        id: lint
         run: pnpm run lint
         continue-on-error: true
       - name: Jest (existing application type errors tracked separately)
+        id: tests
         run: pnpm test -- --runInBand --watch=false
         continue-on-error: true
       - run: pnpm run build
@@ -35,3 +37,11 @@ jobs:
           name: bead-pattern-designer-single-html
           path: dist-single/bead-pattern-designer.html
           if-no-files-found: error
+      - name: Enforce quality gates after build diagnostics
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${{ steps.lint.outcome }}" != "success" || "${{ steps.tests.outcome }}" != "success" ]]; then
+            echo "Lint or Jest failed; see earlier diagnostic steps."
+            exit 1
+          fi

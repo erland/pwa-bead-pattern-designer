@@ -231,8 +231,6 @@ export function PatternGroupEditor({ groupId }: PatternGroupEditorProps) {
           palettes={palettes}
           selectedPartId={selectedPartId}
           onSelectPart={setSelectedPartId}
-          newPartName={newPartName}
-          onChangeNewPartName={setNewPartName}
           onOpenNewPatternDialog={openNewPatternDialog}
           onRemovePart={handleRemovePart}
           onRenamePart={handleRenamePart}

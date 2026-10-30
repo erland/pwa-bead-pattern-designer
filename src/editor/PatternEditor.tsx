@@ -48,7 +48,11 @@ export type PatternEditorProps = {
  * Reusable pattern editor that edits a single BeadPattern by id.
  * Used both as the standalone /editor/:projectId page and inside the group editor.
  */
-export function PatternEditor({
+export function PatternEditor(props: PatternEditorProps) {
+  return <PatternEditorContent key={props.patternId} {...props} />;
+}
+
+function PatternEditorContent({
   patternId,
   rememberAsLastOpened = true,
   titleOverride,

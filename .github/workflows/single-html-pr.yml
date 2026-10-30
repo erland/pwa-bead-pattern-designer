@@ -1,0 +1,33 @@
+name: Verify standalone HTML
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'vite*'
+      - 'package.json'
+      - '.github/workflows/**'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm test -- --runInBand --watch=false
+      - run: pnpm run build
+      - run: pnpm run build:single
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bead-pattern-designer-single-html
+          path: dist-single/bead-pattern-designer.html
+          if-no-files-found: error

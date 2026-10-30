@@ -8,7 +8,7 @@ for (const filename of assets) {
   if (filename.endsWith('.js')) {
     const content = await readFile(join(directory, 'assets', filename), 'utf8');
     html = html.replace(/<script\b[^>]*\bsrc=["'][^"']*\/assets\/[^"']+\.js["'][^>]*><\/script>/i,
-      '<script type="module">' + content.replaceAll('</script', '<\/script') + '</script>');
+      '<script type="module">' + content.replace(/<\/script/gi, '<\\/script') + '</script>');
   } else if (filename.endsWith('.css')) {
     const content = await readFile(join(directory, 'assets', filename), 'utf8');
     html = html.replace(/<link\b[^>]*\bhref=["'][^"']*\/assets\/[^"']+\.css["'][^>]*>/i,

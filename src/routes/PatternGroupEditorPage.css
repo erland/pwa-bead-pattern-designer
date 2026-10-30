@@ -124,6 +124,14 @@
 }
 
 .group-editor__part-main-text {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
   font-weight: 500;
   color: var(--text-color, #222);
   font-size: 0.95rem;
@@ -336,4 +344,8 @@
     touch-action: none;
     pointer-events: auto;
   }
+}
+.group-editor__part-main-text:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
 }

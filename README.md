@@ -191,3 +191,14 @@ public/
 ## License
 
 See the `LICENSE` file in this repository for licensing information.
+
+## Fristående HTML-version
+
+`pnpm run build:single` producerar `dist-single/bead-pattern-designer.html` med
+inbäddad JavaScript och CSS. Den kan öppnas som lokal fil. Till skillnad från
+Pages-versionen använder den hashbaserad routing och innehåller ingen PWA-service
+worker. Vid release publicerar GitHub Actions även filen som nedladdningsbar
+workflow-artifact. PR:er bygger och testar båda varianterna.
+
+Lokal fillagring är webbläsarberoende. Exportera viktiga mönster regelbundet;
+HTML-filen i sig innehåller inte automatiskt dina sparade projekt.

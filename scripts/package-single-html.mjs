@@ -7,24 +7,24 @@ const assets = await readdir(join(directory, 'assets'));
 for (const filename of assets) {
   if (filename.endsWith('.js')) {
     const content = await readFile(join(directory, 'assets', filename), 'utf8');
-    html = html.replace(/<script\\b[^>]*\\bsrc=["'][^"']*\\/assets\\/[^"']+\\.js["'][^>]*><\\/script>/i,
-      '<script type="module">' + content.replaceAll('</script', '<\\/script') + '</script>');
+    html = html.replace(/<script\b[^>]*\bsrc=["'][^"']*\/assets\/[^"']+\.js["'][^>]*><\/script>/i,
+      '<script type="module">' + content.replaceAll('</script', '<\/script') + '</script>');
   } else if (filename.endsWith('.css')) {
     const content = await readFile(join(directory, 'assets', filename), 'utf8');
-    html = html.replace(/<link\\b[^>]*\\bhref=["'][^"']*\\/assets\\/[^"']+\\.css["'][^>]*>/i,
-      '<style>' + content.replaceAll('</style', '<\\/style') + '</style>');
+    html = html.replace(/<link\b[^>]*\bhref=["'][^"']*\/assets\/[^"']+\.css["'][^>]*>/i,
+      '<style>' + content.replaceAll('</style', '<\/style') + '</style>');
   } else {
     throw new Error('Unexpected asset: ' + filename);
   }
 }
-html = html.replace(/\\s*<link\\b[^>]*\\brel=["'](?:icon|manifest|apple-touch-icon)["'][^>]*>/gi, '');
-if (!/<script type="module">[\\s\\S]+<\\/script>/.test(html) || !/<style>[\\s\\S]+<\\/style>/.test(html)) {
+html = html.replace(/\s*<link\b[^>]*\brel=["'](?:icon|manifest|apple-touch-icon)["'][^>]*>/gi, '');
+if (!/<script type="module">[\s\S]+<\/script>/.test(html) || !/<style>[\s\S]+<\/style>/.test(html)) {
   throw new Error('Missing embedded JavaScript or CSS');
 }
-if (/<(?:script|link)\\b[^>]*(?:src|href)=["'][^"']+["']/i.test(html)) {
+if (/<(?:script|link)\b[^>]*(?:src|href)=["'][^"']+["']/i.test(html)) {
   throw new Error('External script or stylesheet dependency remains');
 }
-if (/url\\(\\s*["']?(?!data:|#)[^)"']+/.test(html.match(/<style>[\\s\\S]*?<\\/style>/)?.[0] ?? '')) {
+if (/url\(\s*["']?(?!data:|#)[^)"']+/.test(html.match(/<style>[\s\S]*?<\/style>/)?.[0] ?? '')) {
   throw new Error('External CSS asset remains');
 }
 await writeFile(join(directory, 'bead-pattern-designer.html'), html);

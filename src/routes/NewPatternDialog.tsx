@@ -1,5 +1,5 @@
 // src/routes/NewPatternDialog.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { PegboardShape } from '../domain/shapes';
 import type { BeadPalette } from '../domain/colors';
 import { ShapePaletteSelector } from '../editor/ShapePaletteSelector';
@@ -19,22 +19,27 @@ export function NewPatternDialog({
   onCancel,
   onCreate,
 }: NewPatternDialogProps) {
-  const [name, setName] = useState<string>('');
-  const [shapeId, setShapeId] = useState<string>('');
-  const [paletteId, setPaletteId] = useState<string>('');
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const firstShape = Object.values(shapes)[0];
-    const firstPalette = Object.values(palettes)[0];
-
-    setName('');
-    setShapeId(firstShape?.id ?? '');
-    setPaletteId(firstPalette?.id ?? '');
-  }, [isOpen, shapes, palettes]);
-
   if (!isOpen) return null;
+
+  return (
+    <NewPatternDialogContent
+      shapes={shapes}
+      palettes={palettes}
+      onCancel={onCancel}
+      onCreate={onCreate}
+    />
+  );
+}
+
+function NewPatternDialogContent({
+  shapes,
+  palettes,
+  onCancel,
+  onCreate,
+}: Omit<NewPatternDialogProps, 'isOpen'>) {
+  const [name, setName] = useState('');
+  const [shapeId, setShapeId] = useState(() => Object.values(shapes)[0]?.id ?? '');
+  const [paletteId, setPaletteId] = useState(() => Object.values(palettes)[0]?.id ?? '');
 
   const handleConfirm = () => {
     if (!shapeId || !paletteId) return;

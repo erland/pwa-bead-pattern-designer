@@ -9,11 +9,10 @@ import { StorageService } from './storage';
 import type { PersistedBeadState } from './storage';
 
 // Tiny debounce helper (no extra deps).
-function debounce<T extends (...args: any[]) => void>(fn: T, delayMs: number): T {
+function debounce<T extends (...args: unknown[]) => void>(fn: T, delayMs: number): T {
   let timeoutId: number | undefined;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ((...args: any[]) => {
+  return ((...args: Parameters<T>) => {
     if (typeof window === 'undefined') {
       // In non-browser environments, just call immediately.
       fn(...(args as Parameters<T>));

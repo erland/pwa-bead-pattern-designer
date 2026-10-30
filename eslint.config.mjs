@@ -8,7 +8,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default [
   {
-    ignores: ['dist', 'node_modules']
+    ignores: ['dist', 'dist-single', 'node_modules']
   },
   {
     files: ['**/*.{ts,tsx}'],
@@ -44,5 +44,11 @@ export default [
       'react/react-in-jsx-scope': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off'
     }
+  },
+  {
+    files: ['**/__tests__/**/*.{ts,tsx}', '**/*.{test,spec}.{ts,tsx}'],
+    languageOptions: {
+      globals: globals.jest,
+    },
   }
 ];

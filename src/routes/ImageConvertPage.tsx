@@ -1,6 +1,6 @@
 // src/routes/ImageConvertPage.tsx
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ChangeEventHandler } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBeadStore } from '../store/beadStore';
 import type { EditorUiState } from '../domain/uiState';
@@ -123,7 +123,7 @@ export function ImageConvertPage() {
         }
       : null;
 
-  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = (ev) => {
+  const handleFileChange: ChangeEventHandler<HTMLInputElement> = (ev) => {
     const file = ev.target.files?.[0] ?? null;
     setSourceFile(file);
     setErrorMessage(null);

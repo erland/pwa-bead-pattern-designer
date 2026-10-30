@@ -194,7 +194,6 @@ export function ImageConvertPage() {
       setPreviewPaletteId(selectedPalette.id);
       setUsedColorIds(result.usedColorIds);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(err);
       setErrorMessage(
         err instanceof Error ? err.message : 'Failed to convert image.',

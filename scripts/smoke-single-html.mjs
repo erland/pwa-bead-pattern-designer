@@ -47,13 +47,16 @@ try {
   const hasBead = (grid) => Array.isArray(grid) && grid.some((row) => row.some((color) => color !== null));
   await page.locator('.pattern-editor__canvas canvas').waitFor();
   await page.getByRole('button', { name: /Fill/ }).click();
-  await page.locator('.pattern-editor__canvas canvas').click({ position: { x: 80, y: 80 } });
+  await page.locator('.pattern-editor__canvas canvas').click();
   await page.waitForFunction((id) => {
     const raw = localStorage.getItem('bead-pattern-designer.file-state.v1');
     if (!raw) return false;
     const grid = JSON.parse(raw).patterns[id]?.grid;
     return Array.isArray(grid) && grid.some((row) => row.some((color) => color !== null));
-  }, patternId, { timeout: 10000 });
+  }, patternId, { timeout: 10000 }).catch(async (error) => {
+    console.error('Drawing diagnostic:', { patternId, grid: await readGrid(), pageErrors: errors });
+    throw error;
+  });
   assert.ok(hasBead(await readGrid()), 'Drawing did not persist');
   await page.getByRole('button', { name: /Undo/ }).click();
   await page.waitForFunction((id) => {

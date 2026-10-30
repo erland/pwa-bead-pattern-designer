@@ -9,13 +9,13 @@ import { StorageService } from './storage';
 import type { PersistedBeadState } from './storage';
 
 // Tiny debounce helper (no extra deps).
-function debounce<T extends (...args: unknown[]) => void>(fn: T, delayMs: number): T {
+function debounce<Args extends unknown[]>(fn: (...args: Args) => void, delayMs: number): (...args: Args) => void {
   let timeoutId: number | undefined;
 
-  return ((...args: Parameters<T>) => {
+  return (...args: Args) => {
     if (typeof window === 'undefined') {
       // In non-browser environments, just call immediately.
-      fn(...(args as Parameters<T>));
+      fn(...args);
       return;
     }
 
@@ -25,7 +25,7 @@ function debounce<T extends (...args: unknown[]) => void>(fn: T, delayMs: number
     timeoutId = window.setTimeout(() => {
       fn(...(args as Parameters<T>));
     }, delayMs);
-  }) as T;
+  };
 }
 
 let initialized = false;

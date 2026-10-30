@@ -194,7 +194,8 @@ export const useBeadStore = create<BeadStoreState>((set) => ({
 
   deletePattern: (id) => {
     set((state) => {
-      const { [id]: _deleted, ...rest } = state.patterns;
+      const rest = { ...state.patterns };
+      delete rest[id];
       // Also remove references from groups
       const updatedGroups: Record<string, PatternGroup> = {};
       for (const [groupId, group] of Object.entries(state.groups)) {
@@ -322,7 +323,8 @@ export const useBeadStore = create<BeadStoreState>((set) => ({
 
   deleteGroup: (id) => {
     set((state) => {
-      const { [id]: _deleted, ...rest } = state.groups;
+      const rest = { ...state.groups };
+      delete rest[id];
 
       const newPatterns: Record<string, BeadPattern> = {};
       for (const pattern of Object.values(state.patterns)) {

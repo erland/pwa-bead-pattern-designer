@@ -18,7 +18,6 @@ export function SaveNowButton() {
       await saveStoreNow();
       setLastSavedAt(new Date().toLocaleTimeString());
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Manual save failed', err);
       setErrorMessage('Save failed');
     } finally {

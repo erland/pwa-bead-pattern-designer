@@ -1,5 +1,5 @@
 // src/editor/PatternPaletteDialog.tsx
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import type { BeadPalette, BeadColor } from '../domain/colors';
 import type { BeadPattern } from '../domain/patterns';
 import { useBeadStore } from '../store/beadStore';
@@ -12,7 +12,11 @@ export interface PatternPaletteDialogProps {
   onClose: () => void;
 }
 
-export function PatternPaletteDialog({
+export function PatternPaletteDialog(props: PatternPaletteDialogProps) {
+  return <PatternPaletteDialogContent key={props.pattern.id + ':' + props.pattern.paletteId} {...props} />;
+}
+
+function PatternPaletteDialogContent({
   pattern,
   palettes,
   activeColors,
@@ -21,10 +25,6 @@ export function PatternPaletteDialog({
   const store = useBeadStore();
 
   const [categoryId, setCategoryId] = useState<string>(pattern.paletteId);
-
-  useEffect(() => {
-    setCategoryId(pattern.paletteId);
-  }, [pattern.id, pattern.paletteId]);
 
   const activeColorIds = useMemo(
     () => new Set(activeColors.map((c) => c.id)),

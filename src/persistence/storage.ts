@@ -48,6 +48,30 @@ function hasIndexedDB(): boolean {
 // ─────────────────────────────────────────────────────────────────────────────
 
 let memorySnapshot: PersistedBeadState | null = null;
+const FILE_STORAGE_KEY = 'bead-pattern-designer.file-state.v1';
+
+function isLocalFile(): boolean {
+  return typeof window !== 'undefined' && window.location.protocol === 'file:';
+}
+
+function loadFileSnapshot(): PersistedBeadState | null {
+  try {
+    const value = window.localStorage.getItem(FILE_STORAGE_KEY);
+    return value ? JSON.parse(value) as PersistedBeadState : memorySnapshot;
+  } catch {
+    return memorySnapshot;
+  }
+}
+
+function saveFileSnapshot(snapshot: PersistedBeadState): void {
+  memorySnapshot = snapshot;
+  try {
+    window.localStorage.setItem(FILE_STORAGE_KEY, JSON.stringify(snapshot));
+  } catch {
+    console.warn('Local file storage unavailable; export your patterns to keep them.');
+  }
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // IndexedDB helpers
@@ -136,6 +160,10 @@ async function idbLoadAll(): Promise<PersistedBeadState | null> {
  * - In other environments (e.g. tests), it stores the snapshot in memory only.
  */
 async function saveAll(snapshot: PersistedBeadState): Promise<void> {
+  if (isLocalFile()) {
+    saveFileSnapshot(snapshot);
+    return;
+  }
   if (hasIndexedDB()) {
     try {
       await idbSaveAll(snapshot);
@@ -159,6 +187,7 @@ async function saveAll(snapshot: PersistedBeadState): Promise<void> {
  * In non-IndexedDB environments, this reads from the in-memory fallback.
  */
 async function loadAll(): Promise<PersistedBeadState | null> {
+  if (isLocalFile()) return loadFileSnapshot();
   if (hasIndexedDB()) {
     try {
       return await idbLoadAll();

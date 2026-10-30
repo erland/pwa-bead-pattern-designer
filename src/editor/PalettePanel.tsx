@@ -1,5 +1,5 @@
 // src/editor/PalettePanel.tsx
-import type { BeadColor, BeadColorId } from '../domain/colors';
+import type { BeadColor } from '../domain/colors';
 
 export interface PalettePanelProps {
   /** Colors available in this pattern (already filtered). */
